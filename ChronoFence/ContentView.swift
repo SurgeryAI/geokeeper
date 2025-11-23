@@ -1,61 +1,29 @@
-//
-//  ContentView.swift
-//  ChronoFence
-//
-//  Created by Marc L. Melcher on 11/21/25.
-//
-
 import SwiftUI
+import CoreLocation
 import SwiftData
 
 struct ContentView: View {
-    @Environment(\.modelContext) private var modelContext
-    @Query private var items: [Item]
-
+    @EnvironmentObject var locationManager: LocationManager
+    @Environment(\.modelContext) var modelContext
+    
     var body: some View {
-        NavigationSplitView {
-            List {
-                ForEach(items) { item in
-                    NavigationLink {
-                        Text("Item at \(item.timestamp, format: Date.FormatStyle(date: .numeric, time: .standard))")
-                    } label: {
-                        Text(item.timestamp, format: Date.FormatStyle(date: .numeric, time: .standard))
-                    }
+        TabView {
+            // Setup Tab (Using modern NavigationStack implicitly via MapSetupView design)
+            MapSetupView()
+                .tabItem {
+                    Label("Zones", systemImage: "map.fill")
                 }
-                .onDelete(perform: deleteItems)
-            }
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    EditButton()
+            
+            // Reports Tab
+            ReportView()
+                .tabItem {
+                    Label("History", systemImage: "chart.pie.fill")
                 }
-                ToolbarItem {
-                    Button(action: addItem) {
-                        Label("Add Item", systemImage: "plus")
-                    }
-                }
-            }
-        } detail: {
-            Text("Select an item")
+        }
+        .tint(.indigo) // Professional Brand Color
+        .onAppear {
+            // Pass database context to logic controller
+            locationManager.updateContext(context: modelContext)
         }
     }
-
-    private func addItem() {
-        withAnimation {
-            let newItem = Item(timestamp: Date())
-            modelContext.insert(newItem)
-        }
-    }
-
-    private func deleteItems(offsets: IndexSet) {
-        withAnimation {
-            for index in offsets {
-                modelContext.delete(items[index])
-            }
-        }
-    }
-}
-
-#Preview {
-    ContentView()
-        .modelContainer(for: Item.self, inMemory: true)
 }

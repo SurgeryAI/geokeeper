@@ -10,9 +10,22 @@
 		FDDAB5972ED1163C00A78BD4 /* ChronoFence.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ChronoFence.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		FDDAB5AE2ED1195400A78BD4 /* Exceptions for "ChronoFence" folder in "ChronoFence" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = FDDAB5962ED1163C00A78BD4 /* ChronoFence */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		FDDAB5992ED1163C00A78BD4 /* ChronoFence */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				FDDAB5AE2ED1195400A78BD4 /* Exceptions for "ChronoFence" folder in "ChronoFence" target */,
+			);
 			path = ChronoFence;
 			sourceTree = "<group>";
 		};
@@ -256,6 +269,9 @@
 				DEVELOPMENT_TEAM = C3U5S48E88;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = ChronoFence/Info.plist;
+				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "To show your current location on the map.";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "o track time spent in your custom locations, even when the app is closed.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -288,6 +304,9 @@
 				DEVELOPMENT_TEAM = C3U5S48E88;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = ChronoFence/Info.plist;
+				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "To show your current location on the map.";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "o track time spent in your custom locations, even when the app is closed.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;

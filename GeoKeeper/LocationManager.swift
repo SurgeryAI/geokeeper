@@ -265,6 +265,10 @@ class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
             #endif
 
             try context.save()
+
+            // Send Notification
+            sendNotification(
+                title: "Left \(location.name)", body: "Duration: \(newLog.durationString)")
         } catch {
             #if DEBUG
                 print("Failed to handle region exit persistence: \(error)")

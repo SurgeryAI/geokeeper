@@ -170,14 +170,14 @@ struct LocationEditCard: View {
                 // Validation messages
                 if !canSaveLocation {
                     let trimmedName = locationName.trimmingCharacters(in: .whitespacesAndNewlines)
-                    if trimmedName.isEmpty || trimmedName.count < 2 {
+                    /*if trimmedName.isEmpty || trimmedName.count < 2 {
                         Text("Please enter a longer name.")
                             .font(.caption)
                             .foregroundColor(.red)
                             .padding(.horizontal, 4)
-                    }
+                    } */
                     if locationCoordinate == nil {
-                        Text("Tap the map to place a pin.")
+                        Text("Tap the map to place a zone.")
                             .font(.caption)
                             .foregroundColor(.red)
                             .padding(.horizontal, 4)

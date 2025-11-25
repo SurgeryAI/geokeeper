@@ -8,7 +8,7 @@ struct ZoneListView: View {
     @Environment(\.modelContext) var modelContext
 
     // Edit state
-    @State private var showingEditSheet = false
+    // @State private var showingEditSheet = false // Removed
     @State private var editingLocation: TrackedLocation?
     @State private var editName = ""
     @State private var editRadius: Double = 100
@@ -36,35 +36,34 @@ struct ZoneListView: View {
             }
             .navigationTitle("Tracked Zones")
             .listStyle(.insetGrouped)
-            .sheet(isPresented: $showingEditSheet) {
-                if let location = editingLocation {
-                    EditZoneSheet(
-                        location: location,
-                        name: $editName,
-                        radius: $editRadius,
-                        icon: $editIcon,
-                        onSave: saveEdit,
-                        onDelete: {
-                            deleteLocation(location)
-                            showingEditSheet = false
-                        },
-                        onCancel: {
-                            showingEditSheet = false
-                        }
-                    )
-                    .environmentObject(locationManager)
-                    .environment(\.modelContext, modelContext)
-                }
+            .sheet(item: $editingLocation) { location in
+                EditZoneSheet(
+                    location: location,
+                    name: $editName,
+                    radius: $editRadius,
+                    icon: $editIcon,
+                    onSave: saveEdit,
+                    onDelete: {
+                        deleteLocation(location)
+                        editingLocation = nil
+                    },
+                    onCancel: {
+                        editingLocation = nil
+                    }
+                )
+                .environmentObject(locationManager)
+                .environment(\.modelContext, modelContext)
             }
         }
     }
 
     private func startEditing(_ location: TrackedLocation) {
-        editingLocation = location
+        // Initialize state variables first
         editName = location.name
         editRadius = location.radius
         editIcon = location.iconName
-        showingEditSheet = true
+        // Then trigger the sheet
+        editingLocation = location
     }
 
     private func saveEdit() {
@@ -85,7 +84,7 @@ struct ZoneListView: View {
             // Restart monitoring with new parameters
             locationManager.startMonitoring(location: location)
 
-            showingEditSheet = false
+            editingLocation = nil
         } catch {
             print("[GeoKeeper] ❌ ERROR: Failed to update zone: \(error)")
         }

@@ -16,9 +16,9 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "FD55C8B92ED397B100CDD3AF"
-               BuildableName = "GeoKeeper.app"
-               BlueprintName = "GeoKeeper"
-               ReferencedContainer = "container:GeoKeeper.xcodeproj">
+               BuildableName = "GeoKeepr.app"
+               BlueprintName = "GeoKeepr"
+               ReferencedContainer = "container:GeoKeepr.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
       </BuildActionEntries>
@@ -45,9 +45,9 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "FD55C8B92ED397B100CDD3AF"
-            BuildableName = "GeoKeeper.app"
-            BlueprintName = "GeoKeeper"
-            ReferencedContainer = "container:GeoKeeper.xcodeproj">
+            BuildableName = "GeoKeepr.app"
+            BlueprintName = "GeoKeepr"
+            ReferencedContainer = "container:GeoKeepr.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </LaunchAction>
@@ -62,9 +62,9 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "FD55C8B92ED397B100CDD3AF"
-            BuildableName = "GeoKeeper.app"
-            BlueprintName = "GeoKeeper"
-            ReferencedContainer = "container:GeoKeeper.xcodeproj">
+            BuildableName = "GeoKeepr.app"
+            BlueprintName = "GeoKeepr"
+            ReferencedContainer = "container:GeoKeepr.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </ProfileAction>

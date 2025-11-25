@@ -131,9 +131,9 @@ struct ZoneRowView: View {
             VStack(alignment: .leading, spacing: 4) {
                 HStack {
                     Text(location.name)
-                        .font(.headline)
-
-                    if isInside {
+                        .font(.subheadline)
+                    Spacer()
+                    /*if isInside {
                         Text("ACTIVE")
                             .font(.caption2)
                             .fontWeight(.bold)
@@ -142,7 +142,7 @@ struct ZoneRowView: View {
                             .background(Color.green.opacity(0.2))
                             .foregroundColor(.green)
                             .clipShape(Capsule())
-                    }
+                    }*/
                 }
 
                 Text("\(Int(location.radius))m radius")

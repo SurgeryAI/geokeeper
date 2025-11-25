@@ -628,7 +628,7 @@ private struct InsightCardView: View {
                     .font(.callout)
                     .foregroundStyle(.secondary)
                 Text(mainText)
-                    .font(.headline)
+                    .font(.subheadline)
                     .bold()
                 Text(detailText)
                     .font(.caption2)

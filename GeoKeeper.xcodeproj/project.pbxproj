@@ -149,7 +149,7 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = GeoKeeper/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = GeoKeeper;
+				INFOPLIST_KEY_CFBundleDisplayName = GeoKeep;
 				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "To track time spent in your custom locations, even when the app is closed.";
 				INFOPLIST_KEY_NSLocationAlwaysUsageDescription = "To track time spent in your custom locations, even when the app is closed.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -186,7 +186,7 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = GeoKeeper/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = GeoKeeper;
+				INFOPLIST_KEY_CFBundleDisplayName = GeoKeep;
 				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "To track time spent in your custom locations, even when the app is closed.";
 				INFOPLIST_KEY_NSLocationAlwaysUsageDescription = "To track time spent in your custom locations, even when the app is closed.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;

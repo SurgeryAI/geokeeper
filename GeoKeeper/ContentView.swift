@@ -1,27 +1,33 @@
-import SwiftUI
 import CoreLocation
 import SwiftData
+import SwiftUI
 
 struct ContentView: View {
     // Requires environment object
     @EnvironmentObject var locationManager: LocationManager
     @Environment(\.modelContext) var modelContext
-    
+
     var body: some View {
         TabView {
             // Setup Tab
             MapSetupView()
                 .tabItem {
-                    Label("Zones", systemImage: "map.fill")
+                    Label("Map", systemImage: "map.fill")
                 }
-            
+
+            // Zones List Tab
+            ZoneListView()
+                .tabItem {
+                    Label("Zones", systemImage: "list.bullet.circle.fill")
+                }
+
             // Reports Tab
             ReportView()
                 .tabItem {
                     Label("History", systemImage: "chart.pie.fill")
                 }
         }
-        .tint(.indigo) // Professional Brand Color
+        .tint(.indigo)  // Professional Brand Color
         .onAppear {
             // Pass database context to logic controller
             locationManager.updateContext(context: modelContext)

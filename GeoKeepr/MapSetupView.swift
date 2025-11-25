@@ -300,6 +300,7 @@ struct MapSetupView: View {
                         }
                     }
                 }
+                .id("MainMap")  // Fix for Metal crash on tab switch
             }
             .ignoresSafeArea(edges: .top)  // Make map immersive
             .onAppear {  // <-- Initial map centering logic

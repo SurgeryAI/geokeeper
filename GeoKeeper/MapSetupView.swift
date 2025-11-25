@@ -134,25 +134,41 @@ struct MapSetupView: View {
             // 2. Insert into Database
             modelContext.insert(newLocation)
 
-            // 3. Tell LocationManager to start watching this region
+            // 3. Save to database BEFORE starting monitoring
+            do {
+                try modelContext.save()
+                print("SWIFTDATA SAVE SUCCESSFUL for location: \(trimmedName)")
+            } catch {
+                // If save fails, log the error and ensure the success banner is hidden
+                print(
+                    "!!! SWIFTDATA SAVE FAILED for location: \(trimmedName). Error: \(error.localizedDescription)"
+                )
+                isShowingSaveSuccess = false
+                // Return early if the save failed to prevent UI reset and success feedback
+                return
+            }
+
+            // 4. Tell LocationManager to start watching this region (only after successful save)
             locationManager.startMonitoring(location: newLocation)
 
             // Optimistically set success flag
             isShowingSaveSuccess = true
         }
 
-        // MARK: - Explicit SwiftData Save and Error Check
-        do {
-            try modelContext.save()
-            print("SWIFTDATA SAVE SUCCESSFUL for location: \(trimmedName)")
-        } catch {
-            // If save fails, log the error and ensure the success banner is hidden
-            print(
-                "!!! SWIFTDATA SAVE FAILED for location: \(trimmedName). Error: \(error.localizedDescription)"
-            )
-            isShowingSaveSuccess = false
-            // Return early if the save failed to prevent UI reset and success feedback
-            return
+        // MARK: - Save for Edit Mode
+        if editingLocation != nil {
+            do {
+                try modelContext.save()
+                print("SWIFTDATA SAVE SUCCESSFUL for location: \(trimmedName)")
+            } catch {
+                // If save fails, log the error and ensure the success banner is hidden
+                print(
+                    "!!! SWIFTDATA SAVE FAILED for location: \(trimmedName). Error: \(error.localizedDescription)"
+                )
+                isShowingSaveSuccess = false
+                // Return early if the save failed to prevent UI reset and success feedback
+                return
+            }
         }
 
         // 5. UI Feedback & Reset (Only runs if save was successful)

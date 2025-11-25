@@ -175,7 +175,11 @@ struct MapSetupView: View {
         let generator = UINotificationFeedbackGenerator()
         generator.notificationOccurred(.success)
 
-        resetCard()
+        // Delay the reset slightly to allow the Map to process the SwiftData update first.
+        // This helps prevent Metal crashes in the Simulator caused by simultaneous updates.
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+            self.resetCard()
+        }
 
         // Hide success banner after 3 seconds
         DispatchQueue.main.asyncAfter(deadline: .now() + 3) { isShowingSaveSuccess = false }

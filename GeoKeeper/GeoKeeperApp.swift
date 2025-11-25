@@ -1,5 +1,5 @@
-import SwiftUI
 import SwiftData
+import SwiftUI
 
 @main
 struct GeoKeeperApp: App {
@@ -14,8 +14,11 @@ struct GeoKeeperApp: App {
         let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
 
         do {
-            return try ModelContainer(for: schema, configurations: [modelConfiguration])
+            let container = try ModelContainer(for: schema, configurations: [modelConfiguration])
+            print("[GeoKeeper] ✅ ModelContainer created successfully")
+            return container
         } catch {
+            print("[GeoKeeper] ❌ FATAL: Could not create ModelContainer: \(error)")
             fatalError("Could not create ModelContainer: \(error)")
         }
     }()
@@ -25,6 +28,9 @@ struct GeoKeeperApp: App {
             ContentView()
                 // CRITICAL FIX: Inject the LocationManager into the environment
                 .environmentObject(locationManager)
+                .onAppear {
+                    print("[GeoKeeper] App appeared, model container ready")
+                }
         }
         .modelContainer(sharedModelContainer)
     }

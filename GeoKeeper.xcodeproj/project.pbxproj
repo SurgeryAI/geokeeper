@@ -6,23 +6,7 @@
 	objectVersion = 77;
 	objects = {
 
-/* Begin PBXBuildFile section */
-		FD1DB6282ED4EB9700D5E631 /* LocationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD4863FC2ED38CDD00A7FAD4 /* LocationManager.swift */; };
-		FD1DB6292ED4EBC400D5E631 /* GeoKeeperApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD4863F72ED38CDD00A7FAD4 /* GeoKeeperApp.swift */; };
-		FD1DB62B2ED4EBCF00D5E631 /* DataModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD4863F92ED38CDD00A7FAD4 /* DataModels.swift */; };
-		FD1DB62F2ED4EBE900D5E631 /* ReportView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD4863FE2ED38CDD00A7FAD4 /* ReportView.swift */; };
-/* End PBXBuildFile section */
-
 /* Begin PBXFileReference section */
-		FD02AD392ED39708007DAF37 /* GeoKeeper.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = GeoKeeper.xcodeproj; sourceTree = SOURCE_ROOT; };
-		FD4863F62ED38CDD00A7FAD4 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
-		FD4863F72ED38CDD00A7FAD4 /* GeoKeeperApp.swift */ = {isa = PBXFileReference; explicitFileType = sourcecode.swift; path = GeoKeeperApp.swift; sourceTree = "<group>"; };
-		FD4863F82ED38CDD00A7FAD4 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
-		FD4863F92ED38CDD00A7FAD4 /* DataModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataModels.swift; sourceTree = "<group>"; };
-		FD4863FA2ED38CDD00A7FAD4 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		FD4863FC2ED38CDD00A7FAD4 /* LocationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationManager.swift; sourceTree = "<group>"; };
-		FD4863FD2ED38CDD00A7FAD4 /* MapSetupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MapSetupView.swift; sourceTree = "<group>"; };
-		FD4863FE2ED38CDD00A7FAD4 /* ReportView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReportView.swift; sourceTree = "<group>"; };
 		FD55C8BA2ED397B100CDD3AF /* GeoKeeper.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = GeoKeeper.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -63,31 +47,9 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		FD4864002ED38CDD00A7FAD4 /* GeoKeeper */ = {
-			isa = PBXGroup;
-			children = (
-				FD4863F62ED38CDD00A7FAD4 /* Assets.xcassets */,
-				FD4863F72ED38CDD00A7FAD4 /* GeoKeeperApp.swift */,
-				FD4863F82ED38CDD00A7FAD4 /* ContentView.swift */,
-				FD4863F92ED38CDD00A7FAD4 /* DataModels.swift */,
-				FD4863FA2ED38CDD00A7FAD4 /* Info.plist */,
-				FD4863FC2ED38CDD00A7FAD4 /* LocationManager.swift */,
-				FD4863FD2ED38CDD00A7FAD4 /* MapSetupView.swift */,
-				FD4863FE2ED38CDD00A7FAD4 /* ReportView.swift */,
-				FD02AD392ED39708007DAF37 /* GeoKeeper.xcodeproj */,
-			);
-			path = GeoKeeper;
-			sourceTree = "<group>";
-		};
-		FD55C8B42ED3973A00CDD3AF /* Products */ = {
-			isa = PBXGroup;
-			name = Products;
-			sourceTree = "<group>";
-		};
 		FDDAB58E2ED1163C00A78BD4 = {
 			isa = PBXGroup;
 			children = (
-				FD4864002ED38CDD00A7FAD4 /* GeoKeeper */,
 				FD55C8BB2ED397B100CDD3AF /* GeoKeeper */,
 				FDDAB5982ED1163C00A78BD4 /* Products */,
 			);
@@ -153,12 +115,6 @@
 			preferredProjectObjectVersion = 77;
 			productRefGroup = FDDAB5982ED1163C00A78BD4 /* Products */;
 			projectDirPath = "";
-			projectReferences = (
-				{
-					ProductGroup = FD55C8B42ED3973A00CDD3AF /* Products */;
-					ProjectRef = FD02AD392ED39708007DAF37 /* GeoKeeper.xcodeproj */;
-				},
-			);
 			projectRoot = "";
 			targets = (
 				FD55C8B92ED397B100CDD3AF /* GeoKeeper */,
@@ -181,10 +137,6 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				FD1DB6292ED4EBC400D5E631 /* GeoKeeperApp.swift in Sources */,
-				FD1DB62B2ED4EBCF00D5E631 /* DataModels.swift in Sources */,
-				FD1DB62F2ED4EBE900D5E631 /* ReportView.swift in Sources */,
-				FD1DB6282ED4EB9700D5E631 /* LocationManager.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

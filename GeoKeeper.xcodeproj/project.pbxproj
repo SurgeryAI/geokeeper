@@ -11,15 +11,10 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		FD55C8D12ED398B100CDD3AF /* Exceptions for "GeoKeeper" folder in "GeoKeeper" target */ = {
+		FDD4F72C2ED62390000C4C0D /* Exceptions for "GeoKeeper" folder in "GeoKeeper" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
-				DataModels.swift,
-				GeoKeeperApp.swift,
 				Info.plist,
-				Item.swift,
-				LocationManager.swift,
-				ReportView.swift,
 			);
 			target = FD55C8B92ED397B100CDD3AF /* GeoKeeper */;
 		};
@@ -29,7 +24,7 @@
 		FD55C8BB2ED397B100CDD3AF /* GeoKeeper */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
-				FD55C8D12ED398B100CDD3AF /* Exceptions for "GeoKeeper" folder in "GeoKeeper" target */,
+				FDD4F72C2ED62390000C4C0D /* Exceptions for "GeoKeeper" folder in "GeoKeeper" target */,
 			);
 			path = GeoKeeper;
 			sourceTree = "<group>";

@@ -59,36 +59,39 @@ class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     /// Injects the ModelContext from the App's environment.
     /// - Parameter context: The SwiftData ModelContext for data operations.
     func updateContext(context: ModelContext) {
+        print("[GeoKeeper] updateContext called")
         self.modelContext = context
+        print("[GeoKeeper] ✅ ModelContext set successfully")
         // Load existing regions and start monitoring them only once the context is set
         loadAndStartMonitoringRegions()
     }
 
     /// Loads all existing TrackedLocations from SwiftData and starts Core Location monitoring for each.
     private func loadAndStartMonitoringRegions() {
+        print("[GeoKeeper] loadAndStartMonitoringRegions called")
         guard let context = modelContext else {
-            #if DEBUG
-                print("ModelContext not set. Cannot load regions.")
-            #endif
+            print("[GeoKeeper] ❌ ERROR: ModelContext not set. Cannot load regions.")
             return
         }
 
         do {
             let descriptor = FetchDescriptor<TrackedLocation>()
             let existingLocations = try context.fetch(descriptor)
+            print("[GeoKeeper] Found \(existingLocations.count) existing tracked locations")
 
             // Clear any old regions first (optional, but safer)
             for region in manager.monitoredRegions {
                 manager.stopMonitoring(for: region)
+                print("[GeoKeeper] Stopped monitoring old region: \(region.identifier)")
             }
 
             for location in existingLocations {
                 startMonitoring(location: location)
             }
+            print(
+                "[GeoKeeper] ✅ Finished loading and monitoring \(existingLocations.count) regions")
         } catch {
-            #if DEBUG
-                print("Failed to load existing TrackedLocations: \(error)")
-            #endif
+            print("[GeoKeeper] ❌ ERROR: Failed to load existing TrackedLocations: \(error)")
         }
     }
 
@@ -143,41 +146,43 @@ class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
 
     func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
         userLocation = locations.last
+        if let location = userLocation {
+            print(
+                "[GeoKeeper] Location updated: \(location.coordinate.latitude), \(location.coordinate.longitude)"
+            )
+        }
     }
 
     func locationManager(
         _ manager: CLLocationManager, didChangeAuthorization status: CLAuthorizationStatus
     ) {
         self.authorizationStatus = status
+        print("[GeoKeeper] Authorization status changed to: \(status.rawValue)")
 
         if status != .authorizedAlways {
-            #if DEBUG
-                print("Warning: Geofencing requires 'Always' authorization.")
-            #endif
+            print(
+                "[GeoKeeper] ⚠️ WARNING: Geofencing requires 'Always' authorization. Current: \(status.rawValue)"
+            )
+        } else {
+            print("[GeoKeeper] ✅ 'Always' authorization granted")
         }
     }
 
     func locationManager(
         _ manager: CLLocationManager, monitoringDidFailFor region: CLRegion?, withError error: Error
     ) {
-        #if DEBUG
-            print(
-                "Monitoring failed for region \(region?.identifier ?? "unknown"): \(error.localizedDescription)"
-            )
-        #endif
+        print(
+            "[GeoKeeper] ❌ ERROR: Monitoring failed for region \(region?.identifier ?? "unknown"): \(error.localizedDescription)"
+        )
     }
 
     func locationManager(_ manager: CLLocationManager, didEnterRegion region: CLRegion) {
-        #if DEBUG
-            print("Did Enter Region: \(region.identifier)")
-        #endif
+        print("[GeoKeeper] 🟢 Did Enter Region: \(region.identifier)")
         handleRegionEntry(region: region)
     }
 
     func locationManager(_ manager: CLLocationManager, didExitRegion region: CLRegion) {
-        #if DEBUG
-            print("Did Exit Region: \(region.identifier)")
-        #endif
+        print("[GeoKeeper] 🔴 Did Exit Region: \(region.identifier)")
         handleRegionExit(region: region)
     }
 
@@ -186,12 +191,15 @@ class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     /// Handles updating the entry time of a tracked location upon region entry.
     /// - Parameter region: The region that was entered.
     private func handleRegionEntry(region: CLRegion) {
-        guard let context = modelContext,
-            let uuid = UUID(uuidString: region.identifier)
-        else {
-            #if DEBUG
-                print("Context or UUID missing for region entry: \(region.identifier)")
-            #endif
+        print("[GeoKeeper] handleRegionEntry called for region: \(region.identifier)")
+
+        guard let context = modelContext else {
+            print("[GeoKeeper] ❌ ERROR: ModelContext is nil in handleRegionEntry")
+            return
+        }
+
+        guard let uuid = UUID(uuidString: region.identifier) else {
+            print("[GeoKeeper] ❌ ERROR: Invalid UUID in region identifier: \(region.identifier)")
             return
         }
 
@@ -200,39 +208,39 @@ class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
             let descriptor = FetchDescriptor<TrackedLocation>(
                 predicate: #Predicate { $0.id == uuid })
             guard let location = try context.fetch(descriptor).first else {
-                #if DEBUG
-                    print("Could not find TrackedLocation with ID: \(region.identifier)")
-                #endif
+                print(
+                    "[GeoKeeper] ❌ ERROR: Could not find TrackedLocation with ID: \(region.identifier)"
+                )
                 return
             }
 
             // Update the entry time
             location.entryTime = Date()
-            #if DEBUG
-                print("Updated \(location.name) entryTime to \(location.entryTime!)")
-            #endif
+            print("[GeoKeeper] ✅ Updated \(location.name) entryTime to \(location.entryTime!)")
 
             try context.save()
+            print("[GeoKeeper] ✅ Context saved successfully after entry")
 
             // Send Notification
             sendNotification(
                 title: "Arrived at \(location.name)", body: "Welcome back! Tracking started.")
         } catch {
-            #if DEBUG
-                print("Failed to handle region entry persistence: \(error)")
-            #endif
+            print("[GeoKeeper] ❌ ERROR: Failed to handle region entry persistence: \(error)")
         }
     }
 
     /// Handles creation of a LocationLog and clearing the entry time upon region exit.
     /// - Parameter region: The region that was exited.
     private func handleRegionExit(region: CLRegion) {
-        guard let context = modelContext,
-            let uuid = UUID(uuidString: region.identifier)
-        else {
-            #if DEBUG
-                print("Context or UUID missing for region exit: \(region.identifier)")
-            #endif
+        print("[GeoKeeper] handleRegionExit called for region: \(region.identifier)")
+
+        guard let context = modelContext else {
+            print("[GeoKeeper] ❌ ERROR: ModelContext is nil in handleRegionExit")
+            return
+        }
+
+        guard let uuid = UUID(uuidString: region.identifier) else {
+            print("[GeoKeeper] ❌ ERROR: Invalid UUID in region identifier: \(region.identifier)")
             return
         }
 
@@ -240,14 +248,17 @@ class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
             // Find the tracked location
             let descriptor = FetchDescriptor<TrackedLocation>(
                 predicate: #Predicate { $0.id == uuid })
-            guard let location = try context.fetch(descriptor).first,
-                let entryTime = location.entryTime
-            else {
-                #if DEBUG
-                    print(
-                        "Could not find TrackedLocation or entryTime for exit: \(region.identifier)"
-                    )
-                #endif
+            guard let location = try context.fetch(descriptor).first else {
+                print(
+                    "[GeoKeeper] ❌ ERROR: Could not find TrackedLocation with ID: \(region.identifier)"
+                )
+                return
+            }
+
+            guard let entryTime = location.entryTime else {
+                print(
+                    "[GeoKeeper] ⚠️ WARNING: No entryTime found for \(location.name) - user may not have entered this zone"
+                )
                 return
             }
 
@@ -256,23 +267,37 @@ class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
             // 1. Create and insert the LocationLog
             let newLog = LocationLog(locationName: location.name, entry: entryTime, exit: exitTime)
             context.insert(newLog)
+            print(
+                "[GeoKeeper] ✅ Created LocationLog for \(location.name). Duration: \(newLog.durationString)"
+            )
 
             // 2. Clear the entry time on the TrackedLocation (marking it inactive)
             location.entryTime = nil
-            #if DEBUG
-                print(
-                    "Created LocationLog for \(location.name). Duration: \(newLog.durationString)")
-            #endif
 
             try context.save()
+            print("[GeoKeeper] ✅ Context saved successfully after exit - LocationLog persisted")
 
             // Send Notification
             sendNotification(
                 title: "Left \(location.name)", body: "Duration: \(newLog.durationString)")
         } catch {
-            #if DEBUG
-                print("Failed to handle region exit persistence: \(error)")
-            #endif
+            print("[GeoKeeper] ❌ ERROR: Failed to handle region exit persistence: \(error)")
         }
+    }
+
+    // MARK: - Debug Methods
+
+    /// Debug method to simulate entry notification (for testing in DebugView)
+    func debugSimulateEntry(for location: TrackedLocation) {
+        print("[GeoKeeper Debug] Simulating entry notification for \(location.name)")
+        sendNotification(
+            title: "Arrived at \(location.name)", body: "Welcome back! Tracking started.")
+    }
+
+    /// Debug method to simulate exit notification (for testing in DebugView)
+    func debugSimulateExit(for location: TrackedLocation, duration: String) {
+        print("[GeoKeeper Debug] Simulating exit notification for \(location.name)")
+        sendNotification(
+            title: "Left \(location.name)", body: "Duration: \(duration)")
     }
 }

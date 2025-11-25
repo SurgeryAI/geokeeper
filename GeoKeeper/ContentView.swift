@@ -26,11 +26,21 @@ struct ContentView: View {
                 .tabItem {
                     Label("History", systemImage: "chart.pie.fill")
                 }
+
+            #if DEBUG
+                // Debug Tab (only in DEBUG builds)
+                DebugView()
+                    .tabItem {
+                        Label("Debug", systemImage: "hammer.fill")
+                    }
+            #endif
         }
         .tint(.indigo)  // Professional Brand Color
         .onAppear {
+            print("[GeoKeeper] ContentView appeared, passing context to LocationManager")
             // Pass database context to logic controller
             locationManager.updateContext(context: modelContext)
+            print("[GeoKeeper] Context passed to LocationManager")
         }
     }
 }

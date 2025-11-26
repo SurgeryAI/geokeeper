@@ -151,8 +151,9 @@
 				INFOPLIST_FILE = GeoKeepr/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = GeoKeepr;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.lifestyle";
-				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "To track time spent in your custom locations, even when the app is closed.";
+				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "GeoKeepr needs your location to track when you enter and leave your designated zones, even when the app is in the background.";
 				INFOPLIST_KEY_NSLocationAlwaysUsageDescription = "To track time spent in your custom locations, even when the app is closed.";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "GeoKeepr needs your location to show your current position on the map and set up geofences.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -194,8 +195,9 @@
 				INFOPLIST_FILE = GeoKeepr/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = GeoKeepr;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.lifestyle";
-				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "To track time spent in your custom locations, even when the app is closed.";
+				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "GeoKeepr needs your location to track when you enter and leave your designated zones, even when the app is in the background.";
 				INFOPLIST_KEY_NSLocationAlwaysUsageDescription = "To track time spent in your custom locations, even when the app is closed.";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "GeoKeepr needs your location to show your current position on the map and set up geofences.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;

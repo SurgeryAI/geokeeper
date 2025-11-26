@@ -310,6 +310,9 @@ struct MapSetupView: View {
             }
             .ignoresSafeArea(edges: .top)  // Make map immersive
             .onAppear {  // <-- Initial map centering logic
+                // Start high-precision updates when map appears
+                locationManager.startForegroundUpdates()
+
                 // If there are saved locations and the user location is not yet set or known,
                 // center the map on the first saved location to ensure they are visible.
                 if trackedLocations.isEmpty == false,
@@ -327,6 +330,10 @@ struct MapSetupView: View {
                         MapCamera(
                             centerCoordinate: centerCoordinate, distance: Self.defaultMapDistance))
                 }
+            }
+            .onDisappear {
+                // Stop high-precision updates when map disappears to save battery
+                locationManager.stopForegroundUpdates()
             }
             // --- Robust centering logic when data first loads ---
             .onChange(of: trackedLocations.isEmpty) { oldIsEmpty, newIsEmpty in
@@ -370,4 +377,3 @@ struct MapSetupView: View {
         .scrollDismissesKeyboard(.immediately)  // Ensure keyboard doesn't block view
     }
 }
-

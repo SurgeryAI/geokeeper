@@ -26,10 +26,30 @@ class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
 
         // Request necessary permissions
         manager.requestAlwaysAuthorization()
-        manager.startUpdatingLocation()
+
+        // Energy Optimization: Use significant changes for background tracking
+        // This is much more battery efficient than startUpdatingLocation()
+        manager.startMonitoringSignificantLocationChanges()
 
         // Request notification permissions
         requestNotificationPermission()
+    }
+
+    // MARK: - Energy Optimization
+
+    /// Starts high-precision location updates. Call this when the Map is visible.
+    func startForegroundUpdates() {
+        manager.desiredAccuracy = kCLLocationAccuracyBest
+        manager.startUpdatingLocation()
+        print("[GeoKeeper] ⚡️ Started high-precision foreground updates")
+    }
+
+    /// Stops high-precision updates and reverts to significant change monitoring. Call this when the Map disappears.
+    func stopForegroundUpdates() {
+        manager.stopUpdatingLocation()
+        // Ensure significant changes are still being monitored for geofencing
+        manager.startMonitoringSignificantLocationChanges()
+        print("[GeoKeeper] 🍃 Stopped foreground updates (reverted to significant changes)")
     }
 
     // MARK: - Notifications

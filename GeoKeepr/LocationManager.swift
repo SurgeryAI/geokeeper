@@ -129,6 +129,15 @@ class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         }
     }
 
+    /// Checks if the user is in the specified zone. If so, triggers region entry logic for that zone.
+    func checkIfUserIsInZone(_ location: TrackedLocation) {
+        guard let userLocation = userLocation else { return }
+        let region = location.region
+        if region.contains(userLocation.coordinate) && location.entryTime == nil {
+            handleRegionEntry(region: region)
+        }
+    }
+
     /// Stops monitoring the geofence region associated with a given tracked location.
     /// - Parameter location: The TrackedLocation whose region monitoring should be stopped.
     func stopMonitoring(location: TrackedLocation) {

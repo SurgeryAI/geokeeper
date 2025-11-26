@@ -150,6 +150,9 @@ struct MapSetupView: View {
             // 4. Tell LocationManager to start watching this region (only after successful save)
             locationManager.startMonitoring(location: newLocation)
 
+            // After adding a new zone, check if the user is already inside the new zone to trigger logging.
+            locationManager.checkIfUserIsInZone(newLocation)
+
             // Optimistically set success flag
             isShowingSaveSuccess = true
         }
@@ -174,9 +177,9 @@ struct MapSetupView: View {
         let generator = UINotificationFeedbackGenerator()
         generator.notificationOccurred(.success)
 
-        // Delay the reset slightly to allow the Map to process the SwiftData update first.
-        // This helps prevent Metal crashes in the Simulator caused by simultaneous updates.
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+        // IMPORTANT: Increase delay to ensure Metal/MapKit finish rendering overlays before UI reset.
+        // This mitigates crashes like: 'failed assertion `The following Metal object is being destroyed while still required to be alive ...'' when adding a zone.
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
             self.resetCard()
         }
 
@@ -367,3 +370,4 @@ struct MapSetupView: View {
         .scrollDismissesKeyboard(.immediately)  // Ensure keyboard doesn't block view
     }
 }
+

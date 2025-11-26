@@ -26,6 +26,8 @@ struct LocationEditCard: View {
     private let brandColor = Color.indigo
     private let cardBackground = Material.ultraThinMaterial
 
+    @State private var isShowingIconPicker = false
+
     // MARK: - Icon Choices
     let categorizedIconChoices: [String: [String]] = [
         "Home & Daily": [
@@ -189,25 +191,8 @@ struct LocationEditCard: View {
                     Text("Icon")
                     Spacer()
 
-                    Menu {
-                        ForEach(categorizedIconChoices.keys.sorted(), id: \.self) { category in
-                            Section(category) {
-                                ForEach(categorizedIconChoices[category] ?? [], id: \.self) {
-                                    icon in
-                                    Button {
-                                        selectedIcon = icon
-                                    } label: {
-                                        HStack {
-                                            Image(systemName: icon)
-                                            Text(
-                                                icon.replacingOccurrences(of: ".fill", with: "")
-                                                    .replacingOccurrences(of: ".", with: " ")
-                                                    .capitalized)
-                                        }
-                                    }
-                                }
-                            }
-                        }
+                    Button {
+                        isShowingIconPicker = true
                     } label: {
                         Image(systemName: selectedIcon)
                             .font(.title3)
@@ -218,8 +203,10 @@ struct LocationEditCard: View {
                             .accessibilityLabel("Icon Picker")
                             .accessibilityHint("Choose an icon for this location zone.")
                     }
-                    .tint(brandColor)
-                    .menuStyle(.automatic)
+                    .sheet(isPresented: $isShowingIconPicker) {
+                        IconPickerSheet(
+                            selectedIcon: $selectedIcon, categorizedIcons: categorizedIconChoices)
+                    }
                 }
                 .padding(.horizontal, 4)
 

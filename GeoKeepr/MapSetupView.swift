@@ -76,23 +76,22 @@ struct MapSetupView: View {
     // MARK: - Actions
 
     func resetCard(animate: Bool = true) {
+        // 1. Animate UI state (Card collapse)
         if animate {
             withAnimation {
-                newLocationName = ""
-                newLocationCoordinate = nil
-                newLocationRadius = Self.defaultRadius
-                editingLocation = nil
-                selectedIcon = Self.defaultIconName  // Reset icon
                 isExpanded = false
             }
         } else {
-            newLocationName = ""
-            newLocationCoordinate = nil
-            newLocationRadius = Self.defaultRadius
-            editingLocation = nil
-            selectedIcon = Self.defaultIconName  // Reset icon
             isExpanded = false
         }
+
+        // 2. Reset Map Data (No Animation)
+        // animating these causes Metal crashes in Simulator when pins are removed
+        newLocationName = ""
+        newLocationCoordinate = nil
+        newLocationRadius = Self.defaultRadius
+        editingLocation = nil
+        selectedIcon = Self.defaultIconName
     }
 
     func saveLocation() {

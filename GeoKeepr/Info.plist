@@ -6,5 +6,9 @@
 	<array>
 		<string>location</string>
 	</array>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>GeoKeeper needs your location to track when you enter and leave your designated zones, even when the app is in the background.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>GeoKeeper needs your location to show your current position on the map and set up geofences.</string>
 </dict>
 </plist>

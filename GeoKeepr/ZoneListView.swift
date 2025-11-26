@@ -193,28 +193,34 @@ struct EditZoneSheet: View {
     @Environment(\.modelContext) var modelContext
 
     private let categorizedIconChoices: [String: [String]] = [
-        "Home & Work": [
+        "Home & Daily": [
             "house.fill",
-            "building.2.fill",
+            "bed.double.fill",
+            "cup.and.saucer.fill",
+            "pawprint.fill",
+            "dumbbell.fill",
+        ],
+        "Work & Study": [
             "briefcase.fill",
             "graduationcap.fill",
+            "building.2.fill",
         ],
-        "Health & Fitness": [
-            "figure.run",
-            "dumbbell.fill",
-            "heart.fill",
-            "cross.case.fill",
-        ],
-        "Shopping & Food": [
-            "cart.fill",
+        "Shopping & Health": [
             "bag.fill",
-            "cup.and.saucer.fill",
-            "wineglass.fill",
+            "basket.fill",
+            "heart.text.square.fill",
+            "cross.case.fill",
         ],
         "Travel & Outdoors": [
             "car.fill",
+            "bus.fill",
+            "tram.fill",
+            "fuelpump.fill",
             "airplane",
             "tree.fill",
+            "mountain.2.fill",
+            "beach.umbrella.fill",
+            "tent.fill",
             "bolt.fill",
             "fork.knife",
         ],

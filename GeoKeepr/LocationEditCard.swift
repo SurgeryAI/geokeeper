@@ -44,17 +44,28 @@ struct LocationEditCard: View {
         ],
         "Shopping & Health": [
             "bag.fill",
+            "basket.fill",
             "heart.text.square.fill",
+            "cross.case.fill",
         ],
         "Travel & Outdoors": [
             "car.fill",
+            "bus.fill",
+            "tram.fill",
+            "fuelpump.fill",
             "airplane",
             "tree.fill",
+            "mountain.2.fill",
+            "beach.umbrella.fill",
+            "tent.fill",
             "bolt.fill",
             "fork.knife",
         ],
         "General": [
-            "mappin.circle.fill"
+            "mappin.circle.fill",
+            "star.fill",
+            "flag.fill",
+            "bookmark.fill",
         ],
     ]
 

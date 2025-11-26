@@ -618,14 +618,14 @@ private struct InsightCardView: View {
             icon
                 .font(.title2)
                 .foregroundColor(iconColor)
-                .frame(width: 36, height: 36)
+                .frame(width: 20, height: 20)
                 .background(iconColor.opacity(0.2))
                 .clipShape(RoundedRectangle(cornerRadius: 9, style: .continuous))
                 .accessibilityHidden(true)
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
-                    .font(.callout)
+                    .font(.caption)
                     .foregroundStyle(.secondary)
                 Text(mainText)
                     .font(.subheadline)

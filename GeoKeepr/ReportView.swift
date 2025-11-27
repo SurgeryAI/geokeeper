@@ -134,30 +134,6 @@ struct ReportView: View {
         logs.max(by: { $0.entry < $1.entry })?.entry
     }
 
-    // Consecutive days streak of any zone visits (based on any day with a log, consecutive days before today)
-    var consecutiveDaysStreak: Int {
-        let calendar = Calendar.current
-        let sortedDays = Set(logs.map { calendar.startOfDay(for: $0.entry) }).sorted(by: >)
-        guard !sortedDays.isEmpty else { return 0 }
-        var streak = 1
-        for i in 1..<sortedDays.count {
-            let previousDay = sortedDays[i - 1]
-            let currentDay = sortedDays[i]
-            if calendar.dateComponents([.day], from: currentDay, to: previousDay).day == 1 {
-                streak += 1
-            } else {
-                break
-            }
-        }
-        // If the last day in sortedDays is not today, streak ends at last day
-        if let mostRecent = sortedDays.first,
-            !calendar.isDateInToday(mostRecent)
-        {
-            return streak
-        }
-        return streak
-    }
-
     // MARK: - Chart data for day-by-day total minutes (last 7 days)
     struct DayMinutes: Identifiable {
         let id = UUID()
@@ -284,28 +260,6 @@ struct ReportView: View {
                     // MARK: - Banner for First & Most Recent Visit + Streak
                     if !logs.isEmpty {
                         VStack(spacing: 8) {
-                            HStack {
-                                // Streak banner
-                                HStack(spacing: 6) {
-                                    Image(systemName: "badge.plus.radiowaves.forward")
-                                        .foregroundColor(.white)
-                                    Text("\(consecutiveDaysStreak) Day Streak")
-                                        .bold()
-                                        .foregroundColor(.white)
-                                }
-                                .padding(10)
-                                .background(
-                                    LinearGradient(
-                                        colors: [Color.pink, Color.red], startPoint: .leading,
-                                        endPoint: .trailing)
-                                )
-                                .clipShape(Capsule())
-                                .accessibilityLabel(
-                                    "Consecutive days streak of \(consecutiveDaysStreak)")
-
-                                Spacer()
-                            }
-                            .padding(.horizontal)
 
                             HStack(spacing: 16) {
                                 if let firstDate = firstVisitDate {
@@ -637,6 +591,7 @@ private struct InsightCardView: View {
             Spacer()
         }
         .padding()
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
         .background(.ultraThinMaterial)
         .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
         .shadow(color: iconColor.opacity(0.3), radius: 6, x: 0, y: 3)

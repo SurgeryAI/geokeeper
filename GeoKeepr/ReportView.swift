@@ -336,7 +336,7 @@ struct ReportView: View {
                                 AxisMarks(values: .stride(by: .day)) { _ in
                                     AxisGridLine()
                                     AxisTick()
-                                    AxisValueLabel(format: .dateTime.weekday(.abbreviated))
+                                    AxisValueLabel(format: .dateTime.weekday(.narrow))
                                 }
                             }
                             .chartYAxis {

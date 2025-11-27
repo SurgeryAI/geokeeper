@@ -200,7 +200,7 @@ struct ZoneDetailView: View {
                                     .foregroundStyle(.secondary)
                             }
                             Spacer()
-                            Text(log.exit.formatted(time: .shortened))
+                            Text(log.exit.formatted(date: .omitted, time: .shortened))
                                 .font(.caption2)
                                 .foregroundStyle(.tertiary)
                         }
@@ -255,3 +255,4 @@ struct ZoneDetailView: View {
         }
     }
 }
+

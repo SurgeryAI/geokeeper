@@ -175,10 +175,53 @@ class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
 
     func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
         userLocation = locations.last
+
         if let location = userLocation {
             print(
                 "[GeoKeeper] Location updated: \(location.coordinate.latitude), \(location.coordinate.longitude)"
             )
+
+            // Reliability Check: Manually verify zone states
+            // This catches missed exit events using significant location changes
+            checkZones(for: location)
+        }
+    }
+
+    /// Checks all tracked zones against the current location to catch missed entry/exit events.
+    private func checkZones(for currentLocation: CLLocation) {
+        guard let context = modelContext else { return }
+
+        do {
+            // Fetch all tracked locations
+            let descriptor = FetchDescriptor<TrackedLocation>()
+            let trackedLocations = try context.fetch(descriptor)
+
+            for location in trackedLocations {
+                // Check for missed EXITS
+                // If we think we are inside (entryTime != nil) but we are physically outside
+                if location.entryTime != nil {
+                    let region = location.region
+                    if !region.contains(currentLocation.coordinate) {
+                        print(
+                            "[GeoKeeper] ⚠️ Detected missed exit for \(location.name). Correcting..."
+                        )
+                        handleRegionExit(region: region)
+                    }
+                }
+                // Check for missed ENTRIES
+                // If we think we are outside (entryTime == nil) but we are physically inside
+                else {
+                    let region = location.region
+                    if region.contains(currentLocation.coordinate) {
+                        print(
+                            "[GeoKeeper] ⚠️ Detected missed entry for \(location.name). Correcting..."
+                        )
+                        handleRegionEntry(region: region)
+                    }
+                }
+            }
+        } catch {
+            print("[GeoKeeper] ❌ Error checking zones: \(error)")
         }
     }
 

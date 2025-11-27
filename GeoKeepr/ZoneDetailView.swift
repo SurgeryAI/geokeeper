@@ -62,122 +62,13 @@ struct ZoneDetailView: View {
     var body: some View {
         ScrollView {
             VStack(spacing: 24) {
-                // MARK: - Header
-                VStack(spacing: 16) {
-                    Image(systemName: location.iconName)
-                        .font(.system(size: 60))
-                        .foregroundColor(.white)
-                        .frame(width: 100, height: 100)
-                        .background(isInside ? Color.green : Color.indigo)
-                        .clipShape(Circle())
-                        .shadow(radius: 10)
-
-                    VStack(spacing: 4) {
-                        Text(location.name)
-                            .font(.largeTitle)
-                            .bold()
-
-                        if isInside {
-                            Text("Currently Inside")
-                                .font(.headline)
-                                .foregroundColor(.green)
-                                .padding(.horizontal, 12)
-                                .padding(.vertical, 4)
-                                .background(Color.green.opacity(0.15))
-                                .clipShape(Capsule())
-                        } else {
-                            Text("Outside")
-                                .font(.subheadline)
-                                .foregroundColor(.secondary)
-                        }
-                    }
-                }
-                .padding(.top)
-
-                // MARK: - Insights Grid
-                LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 16) {
-                    InsightCardView(
-                        icon: Image(systemName: "clock.fill"),
-                        iconColor: .indigo,
-                        title: "Total Time",
-                        mainText: formattedTotalTime,
-                        detailText: "All time"
-                    )
-
-                    InsightCardView(
-                        icon: Image(systemName: "hourglass"),
-                        iconColor: .orange,
-                        title: "Avg Visit",
-                        mainText: formattedAverageDuration,
-                        detailText: "Per session"
-                    )
-
-                    InsightCardView(
-                        icon: Image(systemName: "number"),
-                        iconColor: .blue,
-                        title: "Total Visits",
-                        mainText: "\(visitCount)",
-                        detailText: "Sessions"
-                    )
-
-                    InsightCardView(
-                        icon: Image(systemName: "ruler.fill"),
-                        iconColor: .purple,
-                        title: "Radius",
-                        mainText: "\(Int(location.radius))m",
-                        detailText: "Geofence size"
-                    )
-                }
-                .padding(.horizontal)
-
-                // MARK: - Recent History
-                VStack(alignment: .leading, spacing: 12) {
-                    Text("Recent History")
-                        .font(.title2)
-                        .bold()
-                        .padding(.horizontal)
-
-                    if locationLogs.isEmpty {
-                        ContentUnavailableView(
-                            "No Visits Yet",
-                            systemImage: "clock.arrow.circlepath",
-                            description: Text("Visits will appear here once recorded.")
-                        )
-                        .padding(.vertical, 40)
-                    } else {
-                        LazyVStack(spacing: 0) {
-                            ForEach(locationLogs) { log in
-                                HStack {
-                                    VStack(alignment: .leading, spacing: 4) {
-                                        Text(
-                                            log.entry.formatted(
-                                                date: .abbreviated, time: .shortened)
-                                        )
-                                        .font(.body)
-                                        .fontWeight(.medium)
-                                        Text(log.durationString)
-                                            .font(.caption)
-                                            .foregroundStyle(.secondary)
-                                    }
-                                    Spacer()
-                                    Text(log.exit.formatted(time: .shortened))
-                                        .font(.caption2)
-                                        .foregroundStyle(.tertiary)
-                                }
-                                .padding()
-                                .background(Color(UIColor.secondarySystemGroupedBackground))
-                                Divider().padding(.leading)
-                            }
-                        }
-                        .background(Color(UIColor.secondarySystemGroupedBackground))
-                        .cornerRadius(16)
-                        .padding(.horizontal)
-                    }
-                }
+                headerView
+                insightsGridView
+                recentHistoryView
             }
             .padding(.bottom)
         }
-        .background(Color(UIColor.systemGroupedBackground))
+        .background(Color.gray.opacity(0.05))
         .navigationTitle(location.name)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
@@ -204,6 +95,124 @@ struct ZoneDetailView: View {
             )
             .environmentObject(locationManager)
             .environment(\.modelContext, modelContext)
+        }
+    }
+
+    // MARK: - Subviews
+
+    private var headerView: some View {
+        VStack(spacing: 16) {
+            Image(systemName: location.iconName)
+                .font(.system(size: 60))
+                .foregroundColor(.white)
+                .frame(width: 100, height: 100)
+                .background(isInside ? Color.green : Color.indigo)
+                .clipShape(Circle())
+                .shadow(radius: 10)
+
+            VStack(spacing: 4) {
+                Text(location.name)
+                    .font(.largeTitle)
+                    .bold()
+
+                if isInside {
+                    Text("Currently Inside")
+                        .font(.headline)
+                        .foregroundColor(.green)
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 4)
+                        .background(Color.green.opacity(0.15))
+                        .clipShape(Capsule())
+                } else {
+                    Text("Outside")
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+                }
+            }
+        }
+        .padding(.top)
+    }
+
+    private var insightsGridView: some View {
+        LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 16) {
+            InsightCardView(
+                icon: Image(systemName: "clock.fill"),
+                iconColor: .indigo,
+                title: "Total Time",
+                mainText: formattedTotalTime,
+                detailText: "All time"
+            )
+
+            InsightCardView(
+                icon: Image(systemName: "hourglass"),
+                iconColor: .orange,
+                title: "Avg Visit",
+                mainText: formattedAverageDuration,
+                detailText: "Per session"
+            )
+
+            InsightCardView(
+                icon: Image(systemName: "number"),
+                iconColor: .blue,
+                title: "Total Visits",
+                mainText: "\(visitCount)",
+                detailText: "Sessions"
+            )
+
+            InsightCardView(
+                icon: Image(systemName: "ruler.fill"),
+                iconColor: .purple,
+                title: "Radius",
+                mainText: "\(Int(location.radius))m",
+                detailText: "Geofence size"
+            )
+        }
+        .padding(.horizontal)
+    }
+
+    private var recentHistoryView: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Recent History")
+                .font(.title2)
+                .bold()
+                .padding(.horizontal)
+
+            if locationLogs.isEmpty {
+                ContentUnavailableView(
+                    "No Visits Yet",
+                    systemImage: "clock.arrow.circlepath",
+                    description: Text("Visits will appear here once recorded.")
+                )
+                .padding(.vertical, 40)
+            } else {
+                LazyVStack(spacing: 0) {
+                    ForEach(locationLogs) { log in
+                        HStack {
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text(
+                                    log.entry.formatted(
+                                        date: .abbreviated, time: .shortened)
+                                )
+                                .font(.body)
+                                .fontWeight(.medium)
+                                Text(log.durationString)
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                            Spacer()
+                            Text(log.exit.formatted(time: .shortened))
+                                .font(.caption2)
+                                .foregroundStyle(.tertiary)
+                        }
+                        .padding()
+                        .background(Color.gray.opacity(0.1))
+                        Divider().padding(.leading)
+                    }
+                }
+                .background(Color.gray.opacity(0.1))
+                .cornerRadius(16)
+                .padding(.horizontal)
+            }
         }
     }
 

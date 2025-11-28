@@ -55,11 +55,60 @@ struct ZoneDetailView: View {
         location.entryTime != nil
     }
 
+    // MARK: - Chart Data for Past Month
+    struct DailyHours: Identifiable {
+        let id = UUID()
+        let date: Date
+        let hours: Double
+    }
+
+    var dailyHoursData: [DailyHours] {
+        let calendar = Calendar.current
+        let now = Date()
+        var data: [DailyHours] = []
+
+        for dayOffset in (0..<30).reversed() {
+            guard let date = calendar.date(byAdding: .day, value: -dayOffset, to: now) else { continue }
+            let startOfDay = calendar.startOfDay(for: date)
+            guard let endOfDay = calendar.date(byAdding: .day, value: 1, to: startOfDay) else { continue }
+
+            // Break up filtering and accumulation for clarity and compiler friendliness
+            let logsForDay = locationLogs.filter { log in
+                log.entry >= startOfDay && log.entry < endOfDay
+            }
+            let minutesFromLogs = logsForDay.map { $0.durationInMinutes }.reduce(0, +)
+
+            // Compute minutes from active session (if any)
+            var minutesFromCurrentSession = 0
+            if isInside, let entryTime = location.entryTime {
+                let sessionStart = max(entryTime, startOfDay)
+                let sessionEnd = min(now, endOfDay)
+                if sessionStart < sessionEnd {
+                    let interval = sessionEnd.timeIntervalSince(sessionStart)
+                    minutesFromCurrentSession = Int(interval / 60)
+                }
+            }
+
+            let totalMinutes = minutesFromLogs + minutesFromCurrentSession
+            let hours = Double(totalMinutes) / 60.0
+            let daily = DailyHours(date: startOfDay, hours: hours)
+            data.append(daily)
+        }
+
+        return data
+    }
+
     var body: some View {
         ScrollView {
             VStack(spacing: 24) {
                 headerView
                 insightsGridView
+                
+                // MARK: - New Monthly Chart Section
+                if !locationLogs.isEmpty || isInside {
+                    chartSection
+                }
+                
                 recentHistoryView
             }
             .padding(.bottom)
@@ -92,6 +141,55 @@ struct ZoneDetailView: View {
             )
             .environmentObject(locationManager)
             .environment(\.modelContext, modelContext)
+        }
+    }
+
+    // MARK: - Chart Section (Extracted to separate computed property)
+    private var chartSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Daily Hours - Past Month")
+                .font(.title2)
+                .bold()
+                .padding(.horizontal)
+            
+            Chart(dailyHoursData) { day in
+                BarMark(
+                    x: .value("Date", day.date, unit: .day),
+                    y: .value("Hours", day.hours)
+                )
+                .foregroundStyle(
+                    LinearGradient(
+                        colors: [.indigo, .purple],
+                        startPoint: .bottom,
+                        endPoint: .top
+                    )
+                )
+                .cornerRadius(4)
+            }
+            .chartXAxis {
+                AxisMarks(values: .stride(by: .day, count: 7)) { value in
+                    AxisGridLine()
+                    AxisTick()
+                    AxisValueLabel(format: .dateTime.month().day())
+                        .font(.system(size: 9))
+                }
+            }
+            .chartYAxis {
+                AxisMarks(position: .leading) { value in
+                    AxisGridLine()
+                    AxisTick()
+                    AxisValueLabel {
+                        if let hours = value.as(Double.self) {
+                            Text("\(Int(hours))h")
+                        }
+                    }
+                }
+            }
+            .frame(height: 200)
+            .padding()
+            .background(Color.gray.opacity(0.1))
+            .cornerRadius(16)
+            .padding(.horizontal)
         }
     }
 

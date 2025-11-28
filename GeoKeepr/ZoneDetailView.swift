@@ -4,7 +4,8 @@ import SwiftUI
 
 struct ZoneDetailView: View {
     @Bindable var location: TrackedLocation
-    @Query private var allLogs: [LocationLog]
+    @Query(sort: \LocationLog.entry, order: .reverse) private var allLogs: [LocationLog]
+    var locationLogs: [LocationLog] { allLogs.filter { $0.locationName == location.name } }
     @Environment(\.modelContext) var modelContext
     @EnvironmentObject var locationManager: LocationManager
 
@@ -13,12 +14,6 @@ struct ZoneDetailView: View {
     @State private var editName = ""
     @State private var editRadius: Double = 100
     @State private var editIcon = "mappin.circle.fill"
-
-    // Filter logs for this specific location
-    var locationLogs: [LocationLog] {
-        allLogs.filter { $0.locationName == location.name }
-            .sorted { $0.entry > $1.entry }
-    }
 
     // MARK: - Computed Stats
 

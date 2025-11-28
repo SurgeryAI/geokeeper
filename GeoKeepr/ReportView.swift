@@ -15,9 +15,6 @@ struct ReportView: View {
     @State private var activeZoneTimer = Timer.publish(every: 1, on: .main, in: .common)
         .autoconnect()
     @State private var activeZoneNow = Date()
-    // Timer to update chart data hourly
-    @State private var chartTimer = Timer.publish(every: 3600, on: .main, in: .common).autoconnect()
-    @State private var chartNow = Date()
 
     // State for empty state animation
     @State private var emptyStateAnimation = false
@@ -54,11 +51,11 @@ struct ReportView: View {
             if let entryTime = zone.entryTime {
                 // Only include if it matches the time range
                 if timeRange == .week {
-                    let cutoff = Calendar.current.date(byAdding: .day, value: -7, to: chartNow)!
+                    let cutoff = Calendar.current.date(byAdding: .day, value: -7, to: Date())!
                     if entryTime < cutoff { continue }
                 }
 
-                let duration = Int(chartNow.timeIntervalSince(entryTime) / 60)
+                let duration = Int(Date().timeIntervalSince(entryTime) / 60)
                 let currentTotal = report[zone.name] ?? 0
                 report[zone.name] = currentTotal + duration
             }
@@ -74,11 +71,11 @@ struct ReportView: View {
 
             // Only include if it matches the time range
             if timeRange == .week {
-                let cutoff = Calendar.current.date(byAdding: .day, value: -7, to: chartNow)!
+                let cutoff = Calendar.current.date(byAdding: .day, value: -7, to: Date())!
                 if entryTime < cutoff { return total }
             }
 
-            return total + Int(chartNow.timeIntervalSince(entryTime) / 60)
+            return total + Int(Date().timeIntervalSince(entryTime) / 60)
         }
 
         return logMinutes + activeMinutes
@@ -154,7 +151,7 @@ struct ReportView: View {
         let allZoneNames = Set(filteredLogs.map { $0.locationName })
 
         for offset in (0..<7).reversed() {
-            guard let date = calendar.date(byAdding: .day, value: -offset, to: chartNow) else {
+            guard let date = calendar.date(byAdding: .day, value: -offset, to: Date()) else {
                 continue
             }
             let startOfDay = calendar.startOfDay(for: date)
@@ -177,7 +174,7 @@ struct ReportView: View {
 
                 // Calculate how much time was spent in this zone during this specific day
                 let sessionStart = max(entryTime, startOfDay)
-                let sessionEnd = min(chartNow, endOfDay)
+                let sessionEnd = min(Date(), endOfDay)
 
                 if sessionStart < sessionEnd {
                     let minutesThisDay = Int(sessionEnd.timeIntervalSince(sessionStart) / 60)
@@ -186,17 +183,26 @@ struct ReportView: View {
             }
 
             // Convert to hours and create ZoneHours entries
-            for (zoneName, minutes) in zoneMinutes {
-                let hours = Double(minutes) / 60.0
-                data.append(ZoneHours(zoneName: zoneName, day: startOfDay, hours: hours))
+            // Sort zone names to ensure consistent ordering in the stacked chart
+            if zoneMinutes.isEmpty {
+                // For days with no data, add a placeholder entry with 0 hours
+                // This ensures the day still appears on the chart's x-axis
+                data.append(ZoneHours(zoneName: "", day: startOfDay, hours: 0))
+            } else {
+                for (zoneName, minutes) in zoneMinutes.sorted(by: { $0.key < $1.key }) {
+                    let hours = Double(minutes) / 60.0
+                    data.append(ZoneHours(zoneName: zoneName, day: startOfDay, hours: hours))
+                }
             }
         }
         return data
     }
 
-    // Get unique zone names for color mapping
+    // Get unique zone names for color mapping (sorted for consistent ordering)
     var uniqueZoneNames: [String] {
-        Array(Set(filteredLogs.map { $0.locationName })).sorted()
+        // Use sorted array to ensure consistent ordering across updates
+        let allZoneNames = Set(filteredLogs.map { $0.locationName })
+        return allZoneNames.sorted()
     }
 
     // Color palette for zones
@@ -234,63 +240,53 @@ struct ReportView: View {
                     // MARK: - Insights Cards Top Section
                     if !logs.isEmpty {
                         VStack(spacing: 16) {
-                            HStack(spacing: 16) {
-
-                                // Top Zone Card
-                                if let topZone {
-                                    InsightCardView(
-                                        icon: Image(systemName: "crown.fill"),
-                                        iconColor: .yellow,
-                                        title: "Most Time Spent",
-                                        mainText: topZone.name,
-                                        detailText: "\(topZone.minutes) min"
-                                    )
-                                    .accessibilityElement(children: .combine)
-                                    .accessibilityLabel(
-                                        "Most time spent in \(topZone.name), \(topZone.minutes) minutes"
-                                    )
-                                    .transition(.scale.combined(with: .opacity))
-                                    .animation(.easeOut, value: topZone.minutes)
-                                }
-
-                                // Average Daily Time Card
+                            // Top Zone Card
+                            if let topZone {
                                 InsightCardView(
-                                    icon: Image(systemName: "calendar"),
-                                    iconColor: .indigo,
-                                    title: "Avg Daily Time",
-                                    mainText: formattedAverageDailyTime,
-                                    detailText: "Across logged days"
+                                    icon: Image(systemName: "crown.fill"),
+                                    iconColor: .yellow,
+                                    title: "Most Time Spent",
+                                    mainText: topZone.name,
+                                    detailText: "\(topZone.minutes) min"
                                 )
                                 .accessibilityElement(children: .combine)
                                 .accessibilityLabel(
-                                    "Average daily time tracked is \(formattedAverageDailyTime)"
+                                    "Most time spent in \(topZone.name), \(topZone.minutes) minutes"
                                 )
                                 .transition(.scale.combined(with: .opacity))
-                                .animation(.easeOut, value: averageDailyMinutes)
+                                .animation(.easeOut, value: topZone.minutes)
                             }
 
-                            HStack(spacing: 16) {
-                                // Longest Session Card
-                                if let longestSession {
-                                    InsightCardView(
-                                        icon: Image(systemName: "flame.fill"),
-                                        iconColor: .red,
-                                        title: "Longest Session",
-                                        mainText: longestSession.locationName,
-                                        detailText: longestSession.durationString
-                                    )
-                                    .accessibilityElement(children: .combine)
-                                    .accessibilityLabel(
-                                        "Longest single session was at \(longestSession.locationName), lasting \(longestSession.durationString)"
-                                    )
-                                    .transition(.scale.combined(with: .opacity))
-                                    .animation(.easeOut, value: longestSession.durationInMinutes)
-                                }
+                            // Average Daily Time Card
+                            InsightCardView(
+                                icon: Image(systemName: "calendar"),
+                                iconColor: .indigo,
+                                title: "Avg Daily Time",
+                                mainText: formattedAverageDailyTime,
+                                detailText: "Across logged days"
+                            )
+                            .accessibilityElement(children: .combine)
+                            .accessibilityLabel(
+                                "Average daily time tracked is \(formattedAverageDailyTime)"
+                            )
+                            .transition(.scale.combined(with: .opacity))
+                            .animation(.easeOut, value: averageDailyMinutes)
 
-                                // Empty space filler if needed for symmetry
-                                if longestSession == nil {
-                                    Spacer()
-                                }
+                            // Longest Session Card
+                            if let longestSession {
+                                InsightCardView(
+                                    icon: Image(systemName: "flame.fill"),
+                                    iconColor: .red,
+                                    title: "Longest Session",
+                                    mainText: longestSession.locationName,
+                                    detailText: longestSession.durationString
+                                )
+                                .accessibilityElement(children: .combine)
+                                .accessibilityLabel(
+                                    "Longest single session was at \(longestSession.locationName), lasting \(longestSession.durationString)"
+                                )
+                                .transition(.scale.combined(with: .opacity))
+                                .animation(.easeOut, value: longestSession.durationInMinutes)
                             }
                         }
                         .padding(.horizontal)
@@ -457,9 +453,6 @@ struct ReportView: View {
                         }
                         .onReceive(activeZoneTimer) { input in
                             activeZoneNow = input
-                        }
-                        .onReceive(chartTimer) { input in
-                            chartNow = input
                         }
                     }
 

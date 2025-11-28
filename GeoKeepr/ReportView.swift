@@ -201,18 +201,28 @@ struct ReportView: View {
     // Get unique zone names for color mapping (sorted for consistent ordering)
     var uniqueZoneNames: [String] {
         // Use sorted array to ensure consistent ordering across updates
-        let allZoneNames = Set(filteredLogs.map { $0.locationName })
-        return allZoneNames.sorted()
+        // Include both logged locations and currently active zones
+        let loggedZones = Set(filteredLogs.map { $0.locationName })
+        let activeZoneNames = Set(activeZones.map { $0.name })
+        return loggedZones.union(activeZoneNames).sorted()
     }
 
     // Color palette for zones
     func colorForZone(_ zoneName: String) -> Color {
+        if zoneName.isEmpty { return .clear }
+
         let colors: [Color] = [
             .indigo, .purple, .blue, .cyan, .teal, .green,
             .mint, .orange, .pink, .red, .yellow, .brown,
+            .gray, .primary,
         ]
-        let index = abs(zoneName.hashValue) % colors.count
-        return colors[index]
+
+        if let index = uniqueZoneNames.firstIndex(of: zoneName) {
+            return colors[index % colors.count]
+        }
+
+        // Fallback for unknown zones (shouldn't happen often)
+        return colors[abs(zoneName.hashValue) % colors.count]
     }
 
     // Helper function to format TimeInterval into H:M:S string
@@ -455,146 +465,146 @@ struct ReportView: View {
                             activeZoneNow = input
                         }
                     }
-
-                    if logs.isEmpty && activeZones.isEmpty {
-                        // MARK: - Empty State with animation
-                        VStack(spacing: 20) {
-                            Image(systemName: "chart.bar.xaxis")
-                                .resizable()
-                                .scaledToFit()
-                                .frame(width: 80, height: 80)
-                                .foregroundColor(.indigo.opacity(0.6))
-                                .rotationEffect(.degrees(emptyStateAnimation ? 10 : -10))
-                                .opacity(emptyStateAnimation ? 1 : 0.6)
-                                .animation(
-                                    .easeInOut(duration: 2).repeatForever(autoreverses: true),
-                                    value: emptyStateAnimation
-                                )
-                                .accessibilityHidden(true)
-
-                            ContentUnavailableView {
-                                Label("No Data Yet", systemImage: "chart.bar.xaxis")
-                                    .font(.title2)
-                            } description: {
-                                Text(
-                                    "Visit your zones or exit an active zone to generate duration logs."
-                                )
-                                .font(.callout)
-                            }
-                        }
-                        .padding(.top, 50)
-                        .onAppear {
-                            emptyStateAnimation = true
-                        }
-                        .accessibilityElement(children: .combine)
-                        .accessibilityLabel(
-                            "No data yet. Visit your zones or exit an active zone to generate duration logs."
-                        )
-                    } else {
-                        // MARK: - Summary Card
-                        VStack(spacing: 8) {
-                            Text("Total Time Tracked")
-                                .font(.headline)
-                                .foregroundStyle(.secondary)
-                                .textCase(.uppercase)
-
-                            Text(formattedTotalTime)
-                                .font(.system(size: 42, weight: .bold, design: .rounded))
-                                .foregroundStyle(Color.indigo)
-                                .accessibilityLabel("Total time tracked is \(formattedTotalTime)")
-                        }
-                        .frame(maxWidth: .infinity)
-                        .padding()
-                        .background(.ultraThinMaterial)
-                        .cornerRadius(16)
-                        .padding(.horizontal)
-                        .animation(.easeOut, value: formattedTotalTime)
-
-                        // MARK: - Chart Section
-                        VStack(alignment: .leading, spacing: 10) {
-                            Text("Distribution")
-                                .font(.title3)
-                                .bold()
-                                .padding(.leading)
-
-                            Chart {
-                                ForEach(
-                                    aggregatedData.sorted(by: { $0.value > $1.value }), id: \.key
-                                ) { (name, minutes) in
-                                    BarMark(
-                                        x: .value("Location", name),
-                                        y: .value("Minutes", minutes)
-                                    )
-                                    .foregroundStyle(
-                                        LinearGradient(
-                                            colors: [.indigo, .purple], startPoint: .bottom,
-                                            endPoint: .top)
-                                    )
-                                    .cornerRadius(5)
-                                    .annotation(position: .top) {
-                                        Text("\(minutes)")
-                                            .font(.caption2)
-                                            .foregroundColor(.indigo)
-                                            .bold()
-                                    }
-                                }
-                            }
-                            .frame(height: 250)
-                            .padding()
-                        }
-                        .background(.ultraThinMaterial)
-                        .cornerRadius(16)
-                        .shadow(color: .black.opacity(0.05), radius: 5)
-                        .padding(.horizontal)
-                        .animation(.easeOut, value: aggregatedData)
-
-                        // MARK: - Detailed List
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text("Recent Logs")
-                                .font(.title3)
-                                .bold()
-                                .padding(.leading)
-
-                            LazyVStack(spacing: 0) {
-                                ForEach(filteredLogs) { log in
-                                    HStack {
-                                        VStack(alignment: .leading, spacing: 4) {
-                                            Text(log.locationName)
-                                                .font(.body)
-                                                .fontWeight(.medium)
-                                            Text(
-                                                log.entry.formatted(
-                                                    date: .abbreviated, time: .omitted)
+                    /*
+                                        if logs.isEmpty && activeZones.isEmpty {
+                                            // MARK: - Empty State with animation
+                                            VStack(spacing: 20) {
+                                                Image(systemName: "chart.bar.xaxis")
+                                                    .resizable()
+                                                    .scaledToFit()
+                                                    .frame(width: 80, height: 80)
+                                                    .foregroundColor(.indigo.opacity(0.6))
+                                                    .rotationEffect(.degrees(emptyStateAnimation ? 10 : -10))
+                                                    .opacity(emptyStateAnimation ? 1 : 0.6)
+                                                    .animation(
+                                                        .easeInOut(duration: 2).repeatForever(autoreverses: true),
+                                                        value: emptyStateAnimation
+                                                    )
+                                                    .accessibilityHidden(true)
+                    
+                                                ContentUnavailableView {
+                                                    Label("No Data Yet", systemImage: "chart.bar.xaxis")
+                                                        .font(.title2)
+                                                } description: {
+                                                    Text(
+                                                        "Visit your zones or exit an active zone to generate duration logs."
+                                                    )
+                                                    .font(.callout)
+                                                }
+                                            }
+                                            .padding(.top, 50)
+                                            .onAppear {
+                                                emptyStateAnimation = true
+                                            }
+                                            .accessibilityElement(children: .combine)
+                                            .accessibilityLabel(
+                                                "No data yet. Visit your zones or exit an active zone to generate duration logs."
                                             )
-                                            .font(.caption)
-                                            .foregroundStyle(.secondary)
-                                        }
-                                        Spacer()
-                                        VStack(alignment: .trailing, spacing: 2) {
-                                            Text(log.durationString)
-                                                .font(.callout)
-                                                .monospacedDigit()
-                                                .bold()
-                                                .foregroundColor(.indigo)
-                                            Text(
-                                                "\(log.entry.formatted(date: .omitted, time: .shortened)) - \(log.exit.formatted(date: .omitted, time: .shortened))"
-                                            )
-                                            .font(.caption2)
-                                            .foregroundStyle(.secondary)
-                                        }
-                                    }
-                                    .padding()
-                                    .background(Color(UIColor.systemBackground))
-                                    Divider().padding(.leading)
-                                }
-                            }
-                            .background(Color(UIColor.systemBackground))
-                            .cornerRadius(16)
-                            .shadow(color: .black.opacity(0.05), radius: 5)
-                            .padding(.horizontal)
-                        }
-                        .animation(.easeOut, value: filteredLogs.count)
-                    }
+                                        } else {
+                                            // MARK: - Summary Card
+                                            VStack(spacing: 8) {
+                                                Text("Total Time Tracked")
+                                                    .font(.headline)
+                                                    .foregroundStyle(.secondary)
+                                                    .textCase(.uppercase)
+                    
+                                                Text(formattedTotalTime)
+                                                    .font(.system(size: 42, weight: .bold, design: .rounded))
+                                                    .foregroundStyle(Color.indigo)
+                                                    .accessibilityLabel("Total time tracked is \(formattedTotalTime)")
+                                            }
+                                            .frame(maxWidth: .infinity)
+                                            .padding()
+                                            .background(.ultraThinMaterial)
+                                            .cornerRadius(16)
+                                            .padding(.horizontal)
+                                            .animation(.easeOut, value: formattedTotalTime)
+                    
+                                            // MARK: - Chart Section
+                                            VStack(alignment: .leading, spacing: 10) {
+                                                Text("Distribution")
+                                                    .font(.title3)
+                                                    .bold()
+                                                    .padding(.leading)
+                    
+                                                Chart {
+                                                    ForEach(
+                                                        aggregatedData.sorted(by: { $0.value > $1.value }), id: \.key
+                                                    ) { (name, minutes) in
+                                                        BarMark(
+                                                            x: .value("Location", name),
+                                                            y: .value("Minutes", minutes)
+                                                        )
+                                                        .foregroundStyle(
+                                                            LinearGradient(
+                                                                colors: [.indigo, .purple], startPoint: .bottom,
+                                                                endPoint: .top)
+                                                        )
+                                                        .cornerRadius(5)
+                                                        .annotation(position: .top) {
+                                                            Text("\(minutes)")
+                                                                .font(.caption2)
+                                                                .foregroundColor(.indigo)
+                                                                .bold()
+                                                        }
+                                                    }
+                                                }
+                                                .frame(height: 250)
+                                                .padding()
+                                            }
+                                            .background(.ultraThinMaterial)
+                                            .cornerRadius(16)
+                                            .shadow(color: .black.opacity(0.05), radius: 5)
+                                            .padding(.horizontal)
+                                            .animation(.easeOut, value: aggregatedData)
+                    
+                                            // MARK: - Detailed List
+                                            VStack(alignment: .leading, spacing: 8) {
+                                                Text("Recent Logs")
+                                                    .font(.title3)
+                                                    .bold()
+                                                    .padding(.leading)
+                    
+                                                LazyVStack(spacing: 0) {
+                                                    ForEach(filteredLogs) { log in
+                                                        HStack {
+                                                            VStack(alignment: .leading, spacing: 4) {
+                                                                Text(log.locationName)
+                                                                    .font(.body)
+                                                                    .fontWeight(.medium)
+                                                                Text(
+                                                                    log.entry.formatted(
+                                                                        date: .abbreviated, time: .omitted)
+                                                                )
+                                                                .font(.caption)
+                                                                .foregroundStyle(.secondary)
+                                                            }
+                                                            Spacer()
+                                                            VStack(alignment: .trailing, spacing: 2) {
+                                                                Text(log.durationString)
+                                                                    .font(.callout)
+                                                                    .monospacedDigit()
+                                                                    .bold()
+                                                                    .foregroundColor(.indigo)
+                                                                Text(
+                                                                    "\(log.entry.formatted(date: .omitted, time: .shortened)) - \(log.exit.formatted(date: .omitted, time: .shortened))"
+                                                                )
+                                                                .font(.caption2)
+                                                                .foregroundStyle(.secondary)
+                                                            }
+                                                        }
+                                                        .padding()
+                                                        .background(Color(UIColor.systemBackground))
+                                                        Divider().padding(.leading)
+                                                    }
+                                                }
+                                                .background(Color(UIColor.systemBackground))
+                                                .cornerRadius(16)
+                                                .shadow(color: .black.opacity(0.05), radius: 5)
+                                                .padding(.horizontal)
+                                            }
+                                            .animation(.easeOut, value: filteredLogs.count)
+                                        } */
                 }
                 .padding(.vertical)
             }

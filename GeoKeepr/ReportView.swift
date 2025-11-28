@@ -11,9 +11,13 @@ struct ReportView: View {
     @Query var trackedLocations: [TrackedLocation]
 
     @State private var timeRange: TimeRange = .week
-    // Timer to update the "Currently Active" time every second
-    @State private var timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
-    @State private var now = Date()
+    // Timer to update the "Currently Active" time every second (for display only)
+    @State private var activeZoneTimer = Timer.publish(every: 1, on: .main, in: .common)
+        .autoconnect()
+    @State private var activeZoneNow = Date()
+    // Timer to update chart data hourly
+    @State private var chartTimer = Timer.publish(every: 3600, on: .main, in: .common).autoconnect()
+    @State private var chartNow = Date()
 
     // State for empty state animation
     @State private var emptyStateAnimation = false
@@ -50,11 +54,11 @@ struct ReportView: View {
             if let entryTime = zone.entryTime {
                 // Only include if it matches the time range
                 if timeRange == .week {
-                    let cutoff = Calendar.current.date(byAdding: .day, value: -7, to: now)!
+                    let cutoff = Calendar.current.date(byAdding: .day, value: -7, to: chartNow)!
                     if entryTime < cutoff { continue }
                 }
 
-                let duration = Int(now.timeIntervalSince(entryTime) / 60)
+                let duration = Int(chartNow.timeIntervalSince(entryTime) / 60)
                 let currentTotal = report[zone.name] ?? 0
                 report[zone.name] = currentTotal + duration
             }
@@ -70,11 +74,11 @@ struct ReportView: View {
 
             // Only include if it matches the time range
             if timeRange == .week {
-                let cutoff = Calendar.current.date(byAdding: .day, value: -7, to: now)!
+                let cutoff = Calendar.current.date(byAdding: .day, value: -7, to: chartNow)!
                 if entryTime < cutoff { return total }
             }
 
-            return total + Int(now.timeIntervalSince(entryTime) / 60)
+            return total + Int(chartNow.timeIntervalSince(entryTime) / 60)
         }
 
         return logMinutes + activeMinutes
@@ -150,7 +154,7 @@ struct ReportView: View {
         let allZoneNames = Set(filteredLogs.map { $0.locationName })
 
         for offset in (0..<7).reversed() {
-            guard let date = calendar.date(byAdding: .day, value: -offset, to: now) else {
+            guard let date = calendar.date(byAdding: .day, value: -offset, to: chartNow) else {
                 continue
             }
             let startOfDay = calendar.startOfDay(for: date)
@@ -171,7 +175,7 @@ struct ReportView: View {
             for zone in activeZones {
                 guard let entryTime = zone.entryTime else { continue }
                 if entryTime >= startOfDay && entryTime < endOfDay {
-                    let minutesSoFar = Int(now.timeIntervalSince(entryTime) / 60)
+                    let minutesSoFar = Int(chartNow.timeIntervalSince(entryTime) / 60)
                     zoneMinutes[zone.name, default: 0] += minutesSoFar
                 }
             }
@@ -348,7 +352,7 @@ struct ReportView: View {
                                 .foregroundStyle(by: .value("Zone", zoneData.zoneName))
                             }
                             .chartXAxis {
-                                AxisMarks(values: .stride(by: .day)) { _ in
+                                AxisMarks(values: .stride(by: .day, count: 1)) { value in
                                     AxisGridLine()
                                     AxisTick()
                                     AxisValueLabel(format: .dateTime.weekday(.narrow))
@@ -427,7 +431,8 @@ struct ReportView: View {
                                     Spacer()
                                     // Display time in zone, forced to update by timer
                                     if let entryTime = zone.entryTime {
-                                        let timeSinceEntry = Date().timeIntervalSince(entryTime)
+                                        let timeSinceEntry = activeZoneNow.timeIntervalSince(
+                                            entryTime)
                                         Text(formatTimeInterval(timeSinceEntry))
                                             .font(.callout)
                                             .monospacedDigit()
@@ -445,8 +450,11 @@ struct ReportView: View {
                                 .animation(.easeOut, value: zone.entryTime)
                             }
                         }
-                        .onReceive(timer) { input in
-                            now = input
+                        .onReceive(activeZoneTimer) { input in
+                            activeZoneNow = input
+                        }
+                        .onReceive(chartTimer) { input in
+                            chartNow = input
                         }
                     }
 

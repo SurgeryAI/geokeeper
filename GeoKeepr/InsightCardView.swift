@@ -30,10 +30,10 @@ struct InsightCardView: View {
             }
             Spacer()
         }
-        .padding()
+        .padding(5)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
         .background(.ultraThinMaterial)
-        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
         .shadow(color: iconColor.opacity(0.3), radius: 6, x: 0, y: 3)
         .accessibilityElement(children: .combine)
     }

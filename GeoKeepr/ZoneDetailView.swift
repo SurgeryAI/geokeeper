@@ -50,6 +50,25 @@ struct ZoneDetailView: View {
     var visitCount: Int {
         locationLogs.count
     }
+    
+    var mostVisitedWeekdayInfo: (day: String, hours: Double)? {
+        guard !locationLogs.isEmpty else { return nil }
+        let calendar = Calendar.current
+        // Dictionary: weekday (1...7) : total minutes
+        var weekdayTotals: [Int: Int] = [:]
+        for log in locationLogs {
+            let weekday = calendar.component(.weekday, from: log.entry)
+            weekdayTotals[weekday, default: 0] += log.durationInMinutes
+        }
+        if let (maxWeekday, maxMinutes) = weekdayTotals.max(by: { $0.value < $1.value }) {
+            let formatter = DateFormatter()
+            formatter.locale = Locale.current
+            let weekdayName = formatter.weekdaySymbols[(maxWeekday - 1 + 7) % 7]
+            let hours = Double(maxMinutes) / 60.0
+            return (weekdayName, hours)
+        }
+        return nil
+    }
 
     var isInside: Bool {
         location.entryTime != nil
@@ -147,7 +166,7 @@ struct ZoneDetailView: View {
     // MARK: - Chart Section (Extracted to separate computed property)
     private var chartSection: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Daily Hours - Past Month")
+            Text("Hours Per Day")
                 .font(.title2)
                 .bold()
                 .padding(.horizontal)
@@ -197,24 +216,35 @@ struct ZoneDetailView: View {
 
     private var headerView: some View {
         VStack(spacing: 16) {
-            Image(systemName: location.iconName)
-                .font(.system(size: 60))
-                .foregroundColor(.white)
-                .frame(width: 100, height: 100)
-                .background(isInside ? Color.green : Color.indigo)
-                .clipShape(Circle())
-                .shadow(radius: 10)
+            HStack () {
+                Image(systemName: location.iconName)
+                    .font(.system(size: 60))
+                    .foregroundColor(.white)
+                    .frame(width: 100, height: 100)
+                    .background(isInside ? Color.green : Color.indigo)
+                    .clipShape(Circle())
+                    .shadow(radius: 10)
+                
+                VStack () {
+                    Text(("Radius"))
+                        .font(.caption)
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 4)
+                        .background(Color.indigo.opacity(0.7))
 
-            Text((location.category ?? .other).rawValue.capitalized)
-                .font(.caption)
-                .foregroundColor(.white)
-                .padding(.horizontal, 12)
-                .padding(.vertical, 4)
-                .background(Color.indigo.opacity(0.7))
-                .clipShape(Capsule())
+                    Text("\(Int(location.radius))m")
+                        .font(.caption)
+                        .foregroundColor(.blue)
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 2)
+                        .clipShape(Capsule())
+                    
+                }
+            }
 
             if isInside {
-                Text("Currently Inside")
+                Text("Currently Within")
                     .font(.headline)
                     .foregroundColor(.green)
                     .padding(.horizontal, 12)
@@ -256,13 +286,23 @@ struct ZoneDetailView: View {
                 detailText: "Sessions"
             )
 
-            InsightCardView(
-                icon: Image(systemName: "ruler.fill"),
-                iconColor: .purple,
-                title: "Radius",
-                mainText: "\(Int(location.radius))m",
-                detailText: "Geofence size"
-            )
+            if let info = mostVisitedWeekdayInfo {
+                InsightCardView(
+                    icon: Image(systemName: "calendar"),
+                    iconColor: .purple,
+                    title: "Busiest Day",
+                    mainText: info.day,
+                    detailText: String(format: "%.1fh total", info.hours)
+                )
+            } else {
+                InsightCardView(
+                    icon: Image(systemName: "calendar"),
+                    iconColor: .purple,
+                    title: "Busiest Day",
+                    mainText: "--",
+                    detailText: "No data"
+                )
+            }
         }
         .padding(.horizontal)
     }

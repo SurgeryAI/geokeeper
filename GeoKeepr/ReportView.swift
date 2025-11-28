@@ -401,49 +401,7 @@ struct ReportView: View {
                     }
 
                     // MARK: - Banner for First & Most Recent Visit + Streak
-                    if !logs.isEmpty {
-                        VStack(spacing: 8) {
 
-                            HStack(spacing: 16) {
-                                if let firstDate = firstVisitDate {
-                                    VStack(alignment: .leading, spacing: 4) {
-                                        Text("First Visit")
-                                            .font(.callout)
-                                            .foregroundStyle(.secondary)
-                                        Text(bannerDateFormatter(firstDate))
-                                            .font(.headline)
-                                            .bold()
-                                    }
-                                    .accessibilityElement(children: .combine)
-                                    .accessibilityLabel(
-                                        "First visit was on \(bannerDateFormatter(firstDate))")
-                                }
-
-                                Spacer()
-
-                                if let recentDate = mostRecentVisitDate {
-                                    VStack(alignment: .leading, spacing: 4) {
-                                        Text("Most Recent Visit")
-                                            .font(.callout)
-                                            .foregroundStyle(.secondary)
-                                        Text(bannerDateFormatter(recentDate))
-                                            .font(.headline)
-                                            .bold()
-                                    }
-                                    .accessibilityElement(children: .combine)
-                                    .accessibilityLabel(
-                                        "Most recent visit was on \(bannerDateFormatter(recentDate))"
-                                    )
-                                }
-                            }
-                            .padding()
-                            .background(.ultraThinMaterial)
-                            .cornerRadius(16)
-                            .padding(.horizontal)
-                        }
-                        .transition(.opacity)
-                        .animation(.easeOut, value: logs.count)
-                    }
 
                     // MARK: - Zone Activity Chart (last 7 days)
                     if !logs.isEmpty {

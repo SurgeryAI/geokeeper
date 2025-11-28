@@ -78,16 +78,16 @@ class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
 
     /// Injects the ModelContext from the App's environment.
     /// - Parameter context: The SwiftData ModelContext for data operations.
-    func updateContext(context: ModelContext) {
+    func updateContext(context: ModelContext) async {
         print("[GeoKeeper] updateContext called")
         self.modelContext = context
         print("[GeoKeeper] ✅ ModelContext set successfully")
         // Load existing regions and start monitoring them only once the context is set
-        loadAndStartMonitoringRegions()
+        await loadAndStartMonitoringRegions()
     }
 
     /// Loads all existing TrackedLocations from SwiftData and starts Core Location monitoring for each.
-    private func loadAndStartMonitoringRegions() {
+    private func loadAndStartMonitoringRegions() async {
         print("[GeoKeeper] loadAndStartMonitoringRegions called")
         guard let context = modelContext else {
             print("[GeoKeeper] ❌ ERROR: ModelContext not set. Cannot load regions.")
@@ -102,11 +102,13 @@ class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
             // Clear any old regions first (optional, but safer)
             for region in manager.monitoredRegions {
                 manager.stopMonitoring(for: region)
-                print("[GeoKeeper] Stopped monitoring old region: \(region.identifier)")
             }
 
-            for location in existingLocations {
-                startMonitoring(location: location)
+            // Start monitoring on main thread (Core Location requires this)
+            await MainActor.run {
+                for location in existingLocations {
+                    startMonitoring(location: location)
+                }
             }
             print(
                 "[GeoKeeper] ✅ Finished loading and monitoring \(existingLocations.count) regions")

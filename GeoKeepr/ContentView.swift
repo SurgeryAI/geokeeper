@@ -36,11 +36,11 @@ struct ContentView: View {
             #endif
         }
         .tint(.indigo)  // Professional Brand Color
-        .onAppear {
-            print("[GeoKeeper] ContentView appeared, passing context to LocationManager")
-            // Pass database context to logic controller
-            locationManager.updateContext(context: modelContext)
-            print("[GeoKeeper] Context passed to LocationManager")
+        .task {
+            print("[GeoKeeper] ContentView task started, passing context to LocationManager")
+            // Pass database context to logic controller asynchronously
+            await locationManager.updateContext(context: modelContext)
+            print("[GeoKeeper] Context passed to LocationManager (async)")
         }
     }
 }

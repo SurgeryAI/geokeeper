@@ -23,7 +23,7 @@ final class TrackedLocation: Identifiable {
     var iconName: String = "mappin.circle.fill"
 
     /// The category of the location.
-    var category: LocationCategory? = .some(LocationCategory.other)
+    var category: LocationCategory?
 
     /// Returns the actual category, or .other if nil (for safe UI usage)
     var fallbackCategory: LocationCategory { category ?? .other }
@@ -35,9 +35,10 @@ final class TrackedLocation: Identifiable {
         return CLCircularRegion(center: coordinate, radius: radius, identifier: id.uuidString)
     }
 
+    // In DataModels.swift - Update the TrackedLocation initializer
     init(
         id: UUID = UUID(), name: String, latitude: Double, longitude: Double, radius: Double,
-        iconName: String = "mappin.circle.fill", category: LocationCategory? = .some(LocationCategory.other)
+        iconName: String = "mappin.circle.fill", category: LocationCategory? = nil
     ) {
         self.id = id
         self.name = name

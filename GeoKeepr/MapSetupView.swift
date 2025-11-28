@@ -131,7 +131,7 @@ struct MapSetupView: View {
                 longitude: coordinate.longitude,
                 radius: newLocationRadius,
                 iconName: selectedIcon,  // Save the new icon
-                category: selectedCategory  // Save the new category
+                category: .some(selectedCategory)  // Save the new category
             )
 
             // 2. Insert into Database
@@ -260,7 +260,7 @@ struct MapSetupView: View {
                                                 latitude: location.latitude,
                                                 longitude: location.longitude)
                                             self.selectedIcon = location.iconName  // Load the saved icon
-                                            self.selectedCategory = location.category  // Load the saved category
+                                            self.selectedCategory = location.category ?? .other  // Load the saved category, use .other if nil
                                             self.isExpanded = true
 
                                             // Explicitly center map on the selected location
@@ -315,7 +315,7 @@ struct MapSetupView: View {
             }
             .ignoresSafeArea(edges: .top)  // Make map immersive
             .onAppear {  // <-- Initial map centering logic
-                // Start high-precision updates when map appears
+                // FIX: Call method directly on locationManager (not $locationManager)
                 locationManager.startForegroundUpdates()
 
                 // If there are saved locations and the user location is not yet set or known,
@@ -337,7 +337,7 @@ struct MapSetupView: View {
                 }
             }
             .onDisappear {
-                // Stop high-precision updates when map disappears to save battery
+                // FIX: Call method directly on locationManager (not $locationManager)
                 locationManager.stopForegroundUpdates()
             }
             // --- Robust centering logic when data first loads ---

@@ -107,6 +107,14 @@ struct ZoneDetailView: View {
                 .clipShape(Circle())
                 .shadow(radius: 10)
 
+            Text((location.category ?? .other).rawValue.capitalized)
+                .font(.caption)
+                .foregroundColor(.white)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 4)
+                .background(Color.indigo.opacity(0.7))
+                .clipShape(Capsule())
+
             if isInside {
                 Text("Currently Inside")
                     .font(.headline)
@@ -213,7 +221,7 @@ struct ZoneDetailView: View {
         editName = location.name
         editRadius = location.radius
         editIcon = location.iconName
-        editCategory = location.category
+        editCategory = location.fallbackCategory
         showingEditSheet = true
     }
 
@@ -248,3 +256,4 @@ struct ZoneDetailView: View {
         }
     }
 }
+

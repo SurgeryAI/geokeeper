@@ -127,6 +127,7 @@ struct EditZoneSheet: View {
     @Binding var name: String
     @Binding var radius: Double
     @Binding var icon: String
+    @Binding var category: LocationCategory
     let onSave: () -> Void
     let onDelete: () -> Void
     let onCancel: () -> Void
@@ -192,6 +193,15 @@ struct EditZoneSheet: View {
                             Text("Name must be at least 2 characters")
                                 .font(.caption)
                                 .foregroundColor(.red)
+                        }
+                    }
+                }
+
+                Section("Category") {
+                    Picker("Select Category", selection: $category) {
+                        ForEach(LocationCategory.allCases) { category in
+                            Label(category.rawValue, systemImage: category.icon)
+                                .tag(category)
                         }
                     }
                 }

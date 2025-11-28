@@ -13,6 +13,7 @@ struct ZoneDetailView: View {
     @State private var editName = ""
     @State private var editRadius: Double = 100
     @State private var editIcon = "mappin.circle.fill"
+    @State private var editCategory: LocationCategory = .other
 
     // Filter logs for this specific location
     var locationLogs: [LocationLog] {
@@ -84,6 +85,7 @@ struct ZoneDetailView: View {
                 name: $editName,
                 radius: $editRadius,
                 icon: $editIcon,
+                category: $editCategory,
                 onSave: saveEdit,
                 onDelete: {
                     // Delete is handled by parent usually, but we can do it here and dismiss
@@ -216,6 +218,7 @@ struct ZoneDetailView: View {
         editName = location.name
         editRadius = location.radius
         editIcon = location.iconName
+        editCategory = location.category
         showingEditSheet = true
     }
 
@@ -227,6 +230,7 @@ struct ZoneDetailView: View {
         location.name = editName.trimmingCharacters(in: .whitespacesAndNewlines)
         location.radius = editRadius
         location.iconName = editIcon
+        location.category = editCategory
 
         do {
             try modelContext.save()

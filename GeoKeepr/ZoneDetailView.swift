@@ -50,7 +50,7 @@ struct ZoneDetailView: View {
     var visitCount: Int {
         locationLogs.count
     }
-    
+
     var mostVisitedWeekdayInfo: (day: String, hours: Double)? {
         guard !locationLogs.isEmpty else { return nil }
         let calendar = Calendar.current
@@ -87,9 +87,13 @@ struct ZoneDetailView: View {
         var data: [DailyHours] = []
 
         for dayOffset in (0..<30).reversed() {
-            guard let date = calendar.date(byAdding: .day, value: -dayOffset, to: now) else { continue }
+            guard let date = calendar.date(byAdding: .day, value: -dayOffset, to: now) else {
+                continue
+            }
             let startOfDay = calendar.startOfDay(for: date)
-            guard let endOfDay = calendar.date(byAdding: .day, value: 1, to: startOfDay) else { continue }
+            guard let endOfDay = calendar.date(byAdding: .day, value: 1, to: startOfDay) else {
+                continue
+            }
 
             // Break up filtering and accumulation for clarity and compiler friendliness
             let logsForDay = locationLogs.filter { log in
@@ -122,12 +126,12 @@ struct ZoneDetailView: View {
             VStack(spacing: 24) {
                 headerView
                 insightsGridView
-                
+
                 // MARK: - New Monthly Chart Section
                 if !locationLogs.isEmpty || isInside {
                     chartSection
                 }
-                
+
                 recentHistoryView
             }
             .padding(.bottom)
@@ -170,7 +174,7 @@ struct ZoneDetailView: View {
                 .font(.title2)
                 .bold()
                 .padding(.horizontal)
-            
+
             Chart(dailyHoursData) { day in
                 BarMark(
                     x: .value("Date", day.date, unit: .day),
@@ -216,7 +220,7 @@ struct ZoneDetailView: View {
 
     private var headerView: some View {
         VStack(spacing: 16) {
-            HStack () {
+            HStack {
                 Image(systemName: location.iconName)
                     .font(.system(size: 60))
                     .foregroundColor(.white)
@@ -224,8 +228,8 @@ struct ZoneDetailView: View {
                     .background(isInside ? Color.green : Color.indigo)
                     .clipShape(Circle())
                     .shadow(radius: 10)
-                
-                VStack () {
+
+                VStack {
                     Text(("Radius"))
                         .font(.caption)
                         .foregroundColor(.white)
@@ -239,7 +243,23 @@ struct ZoneDetailView: View {
                         .padding(.horizontal, 12)
                         .padding(.vertical, 2)
                         .clipShape(Capsule())
-                    
+
+                    NavigationLink(
+                        destination: ZoneCategoryView(category: location.fallbackCategory)
+                    ) {
+                        HStack(spacing: 4) {
+                            Image(systemName: location.fallbackCategory.icon)
+                            Text(location.fallbackCategory.rawValue)
+                        }
+                        .font(.caption)
+                        .fontWeight(.bold)
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 6)
+                        .background(Color.indigo)
+                        .clipShape(Capsule())
+                        .shadow(radius: 2)
+                    }
                 }
             }
 
@@ -394,4 +414,3 @@ struct ZoneDetailView: View {
         }
     }
 }
-

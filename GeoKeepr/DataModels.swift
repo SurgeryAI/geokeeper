@@ -23,7 +23,10 @@ final class TrackedLocation: Identifiable {
     var iconName: String = "mappin.circle.fill"
 
     /// The category of the location.
-    var category: LocationCategory = LocationCategory.other
+    var category: LocationCategory? = .other
+
+    /// Returns the actual category, or .other if nil (for safe UI usage)
+    var fallbackCategory: LocationCategory { category ?? .other }
 
     /// Computed property to provide the Core Location region object.
     var region: CLCircularRegion {
@@ -34,7 +37,7 @@ final class TrackedLocation: Identifiable {
 
     init(
         id: UUID = UUID(), name: String, latitude: Double, longitude: Double, radius: Double,
-        iconName: String = "mappin.circle.fill", category: LocationCategory = .other
+        iconName: String = "mappin.circle.fill", category: LocationCategory? = .other
     ) {
         self.id = id
         self.name = name

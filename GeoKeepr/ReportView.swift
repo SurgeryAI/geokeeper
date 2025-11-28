@@ -340,15 +340,12 @@ struct ReportView: View {
                                 .bold()
                                 .padding(.horizontal)
 
-                            Chart {
-                                ForEach(zoneHoursData) { zoneData in
-                                    BarMark(
-                                        x: .value("Day", zoneData.day, unit: .day),
-                                        y: .value("Hours", zoneData.hours)
-                                    )
-                                    .foregroundStyle(colorForZone(zoneData.zoneName))
-                                    .position(by: .value("Zone", zoneData.zoneName))
-                                }
+                            Chart(zoneHoursData) { zoneData in
+                                BarMark(
+                                    x: .value("Day", zoneData.day, unit: .day),
+                                    y: .value("Hours", zoneData.hours)
+                                )
+                                .foregroundStyle(by: .value("Zone", zoneData.zoneName))
                             }
                             .chartXAxis {
                                 AxisMarks(values: .stride(by: .day)) { _ in
@@ -368,10 +365,9 @@ struct ReportView: View {
                                     }
                                 }
                             }
-                            .chartForegroundStyleScale(
-                                domain: uniqueZoneNames,
-                                range: uniqueZoneNames.map { colorForZone($0) }
-                            )
+                            .chartForegroundStyleScale { zoneName in
+                                colorForZone(zoneName)
+                            }
                             .chartLegend(position: .bottom, alignment: .leading) {
                                 VStack(alignment: .leading, spacing: 8) {
                                     ForEach(uniqueZoneNames, id: \.self) { zoneName in
@@ -399,8 +395,6 @@ struct ReportView: View {
                                             ], startPoint: .topLeading, endPoint: .bottomTrailing))
                             )
                             .padding(.horizontal)
-                            .animation(.easeOut, value: zoneHoursData.map { $0.hours })
-                            .transition(.scale)
                         }
                     }
 

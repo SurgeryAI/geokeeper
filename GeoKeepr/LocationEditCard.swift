@@ -11,6 +11,7 @@ struct LocationEditCard: View {
     @Binding var locationCoordinate: CLLocationCoordinate2D?
     @Binding var locationRadius: Double
     @Binding var selectedIcon: String
+    @Binding var selectedCategory: LocationCategory
 
     // MARK: - Actions
     var onSave: () -> Void
@@ -179,6 +180,34 @@ struct LocationEditCard: View {
                     )
                     .accessibilityLabel("Location Name")
                     .accessibilityHint("Enter a name for this zone, like 'Work' or 'Gym'.")
+
+                // Input: Category Picker
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Category")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+
+                    Menu {
+                        Picker("Category", selection: $selectedCategory) {
+                            ForEach(LocationCategory.allCases) { category in
+                                Label(category.rawValue, systemImage: category.icon)
+                                    .tag(category)
+                            }
+                        }
+                    } label: {
+                        HStack {
+                            Label(selectedCategory.rawValue, systemImage: selectedCategory.icon)
+                                .foregroundColor(.primary)
+                            Spacer()
+                            Image(systemName: "chevron.up.chevron.down")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                        .padding()
+                        .background(Color.gray.opacity(0.1))
+                        .cornerRadius(10)
+                    }
+                }
 
                 // Validation messages
                 if !canSaveLocation {

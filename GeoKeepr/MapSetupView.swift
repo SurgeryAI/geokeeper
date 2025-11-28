@@ -23,6 +23,7 @@ struct MapSetupView: View {
     @State private var newLocationRadius: Double = Self.defaultRadius
     @State private var isShowingSaveSuccess = false
     @State private var selectedIcon: String = Self.defaultIconName
+    @State private var selectedCategory: LocationCategory = .other
 
     // State to hold the location currently being edited
     @State private var editingLocation: TrackedLocation?
@@ -92,6 +93,7 @@ struct MapSetupView: View {
         newLocationRadius = Self.defaultRadius
         editingLocation = nil
         selectedIcon = Self.defaultIconName
+        selectedCategory = .other
     }
 
     func saveLocation() {
@@ -111,6 +113,7 @@ struct MapSetupView: View {
             locationToUpdate.longitude = coordinate.longitude
             locationToUpdate.radius = newLocationRadius
             locationToUpdate.iconName = selectedIcon  // Save the updated icon
+            locationToUpdate.category = selectedCategory  // Save the updated category
 
             // 3. Start monitoring the new (updated) region
             locationManager.startMonitoring(location: locationToUpdate)
@@ -127,7 +130,8 @@ struct MapSetupView: View {
                 latitude: coordinate.latitude,
                 longitude: coordinate.longitude,
                 radius: newLocationRadius,
-                iconName: selectedIcon  // Save the new icon
+                iconName: selectedIcon,  // Save the new icon
+                category: selectedCategory  // Save the new category
             )
 
             // 2. Insert into Database
@@ -256,6 +260,7 @@ struct MapSetupView: View {
                                                 latitude: location.latitude,
                                                 longitude: location.longitude)
                                             self.selectedIcon = location.iconName  // Load the saved icon
+                                            self.selectedCategory = location.category  // Load the saved category
                                             self.isExpanded = true
 
                                             // Explicitly center map on the selected location
@@ -366,6 +371,7 @@ struct MapSetupView: View {
                 locationCoordinate: $newLocationCoordinate,
                 locationRadius: $newLocationRadius,
                 selectedIcon: $selectedIcon,
+                selectedCategory: $selectedCategory,
                 onSave: saveLocation,
                 onDelete: deleteLocation,
                 onCancel: { resetCard() },

@@ -110,24 +110,18 @@ struct ZoneDetailView: View {
                 .clipShape(Circle())
                 .shadow(radius: 10)
 
-            VStack(spacing: 4) {
-                Text(location.name)
-                    .font(.largeTitle)
-                    .bold()
-
-                if isInside {
-                    Text("Currently Inside")
-                        .font(.headline)
-                        .foregroundColor(.green)
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 4)
-                        .background(Color.green.opacity(0.15))
-                        .clipShape(Capsule())
-                } else {
-                    Text("Outside")
-                        .font(.subheadline)
-                        .foregroundColor(.secondary)
-                }
+            if isInside {
+                Text("Currently Inside")
+                    .font(.headline)
+                    .foregroundColor(.green)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 4)
+                    .background(Color.green.opacity(0.15))
+                    .clipShape(Capsule())
+            } else {
+                Text("Outside")
+                    .font(.subheadline)
+                    .foregroundColor(.secondary)
             }
         }
         .padding(.top)
@@ -255,4 +249,3 @@ struct ZoneDetailView: View {
         }
     }
 }
-

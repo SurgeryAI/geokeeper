@@ -134,16 +134,21 @@ struct ReportView: View {
         logs.max(by: { $0.entry < $1.entry })?.entry
     }
 
-    // MARK: - Chart data for day-by-day total minutes (last 7 days)
-    struct DayMinutes: Identifiable {
+    // MARK: - Chart data for zone-specific hours per day (last 7 days)
+    struct ZoneHours: Identifiable {
         let id = UUID()
+        let zoneName: String
         let day: Date
-        let minutes: Int
+        let hours: Double
     }
 
-    var dayByDayData: [DayMinutes] {
+    var zoneHoursData: [ZoneHours] {
         let calendar = Calendar.current
-        var days: [DayMinutes] = []
+        var data: [ZoneHours] = []
+
+        // Get all unique zone names
+        let allZoneNames = Set(filteredLogs.map { $0.locationName })
+
         for offset in (0..<7).reversed() {
             guard let date = calendar.date(byAdding: .day, value: -offset, to: now) else {
                 continue
@@ -151,23 +156,48 @@ struct ReportView: View {
             let startOfDay = calendar.startOfDay(for: date)
             let endOfDay = calendar.date(byAdding: .day, value: 1, to: startOfDay)!
 
-            let totalMinutesForDay = filteredLogs.filter {
-                $0.entry >= startOfDay && $0.entry < endOfDay
-            }.reduce(0) { $0 + $1.durationInMinutes }
+            // Calculate hours per zone for this day
+            var zoneMinutes: [String: Int] = [:]
 
-            // Add active sessions that started on this day
-            let activeMinutesForDay = activeZones.filter {
-                guard let entryTime = $0.entryTime else { return false }
-                return entryTime >= startOfDay && entryTime < endOfDay
-            }.reduce(0) { total, zone in
-                guard let entryTime = zone.entryTime else { return total }
-                return total + Int(now.timeIntervalSince(entryTime) / 60)
+            // Add completed logs
+            let logsForDay = filteredLogs.filter {
+                $0.entry >= startOfDay && $0.entry < endOfDay
+            }
+            for log in logsForDay {
+                zoneMinutes[log.locationName, default: 0] += log.durationInMinutes
             }
 
-            days.append(
-                DayMinutes(day: startOfDay, minutes: totalMinutesForDay + activeMinutesForDay))
+            // Add active sessions that started on this day
+            for zone in activeZones {
+                guard let entryTime = zone.entryTime else { continue }
+                if entryTime >= startOfDay && entryTime < endOfDay {
+                    let minutesSoFar = Int(now.timeIntervalSince(entryTime) / 60)
+                    zoneMinutes[zone.name, default: 0] += minutesSoFar
+                }
+            }
+
+            // Convert to hours and create ZoneHours entries
+            for (zoneName, minutes) in zoneMinutes {
+                let hours = Double(minutes) / 60.0
+                data.append(ZoneHours(zoneName: zoneName, day: startOfDay, hours: hours))
+            }
         }
-        return days
+        return data
+    }
+
+    // Get unique zone names for color mapping
+    var uniqueZoneNames: [String] {
+        Array(Set(filteredLogs.map { $0.locationName })).sorted()
+    }
+
+    // Color palette for zones
+    func colorForZone(_ zoneName: String) -> Color {
+        let colors: [Color] = [
+            .indigo, .purple, .blue, .cyan, .teal, .green,
+            .mint, .orange, .pink, .red, .yellow, .brown,
+        ]
+        let index = abs(zoneName.hashValue) % colors.count
+        return colors[index]
     }
 
     // Helper function to format TimeInterval into H:M:S string
@@ -302,34 +332,22 @@ struct ReportView: View {
                         .animation(.easeOut, value: logs.count)
                     }
 
-                    // MARK: - Day-by-Day Chart (last 7 days)
+                    // MARK: - Zone Activity Chart (last 7 days)
                     if !logs.isEmpty {
                         VStack(alignment: .leading, spacing: 12) {
-                            Text("Daily Activity")
+                            Text("Daily Activity by Zone")
                                 .font(.title2)
                                 .bold()
                                 .padding(.horizontal)
 
                             Chart {
-                                ForEach(dayByDayData) { dayData in
+                                ForEach(zoneHoursData) { zoneData in
                                     BarMark(
-                                        x: .value("Day", dayData.day, unit: .day),
-                                        y: .value("Minutes", dayData.minutes)
+                                        x: .value("Day", zoneData.day, unit: .day),
+                                        y: .value("Hours", zoneData.hours)
                                     )
-                                    .foregroundStyle(
-                                        LinearGradient(
-                                            colors: [Color.indigo.opacity(0.7), Color.purple],
-                                            startPoint: .bottom, endPoint: .top)
-                                    )
-                                    .cornerRadius(6)
-                                    .annotation(position: .top) {
-                                        if dayData.minutes > 0 {
-                                            Text("\(dayData.minutes)")
-                                                .font(.caption2)
-                                                .foregroundColor(.indigo)
-                                                .bold()
-                                        }
-                                    }
+                                    .foregroundStyle(colorForZone(zoneData.zoneName))
+                                    .position(by: .value("Zone", zoneData.zoneName))
                                 }
                             }
                             .chartXAxis {
@@ -340,21 +358,48 @@ struct ReportView: View {
                                 }
                             }
                             .chartYAxis {
-                                AxisMarks(position: .leading)
+                                AxisMarks(position: .leading) { value in
+                                    AxisGridLine()
+                                    AxisTick()
+                                    AxisValueLabel {
+                                        if let hours = value.as(Double.self) {
+                                            Text("\(Int(hours))h")
+                                        }
+                                    }
+                                }
                             }
-                            .frame(height: 200)
+                            .chartForegroundStyleScale(
+                                domain: uniqueZoneNames,
+                                range: uniqueZoneNames.map { colorForZone($0) }
+                            )
+                            .chartLegend(position: .bottom, alignment: .leading) {
+                                VStack(alignment: .leading, spacing: 8) {
+                                    ForEach(uniqueZoneNames, id: \.self) { zoneName in
+                                        HStack(spacing: 6) {
+                                            RoundedRectangle(cornerRadius: 3)
+                                                .fill(colorForZone(zoneName))
+                                                .frame(width: 12, height: 12)
+                                            Text(zoneName)
+                                                .font(.caption)
+                                                .foregroundColor(.secondary)
+                                        }
+                                    }
+                                }
+                                .padding(.top, 8)
+                            }
+                            .frame(height: 250)
                             .padding()
                             .background(
                                 RoundedRectangle(cornerRadius: 20)
                                     .fill(
                                         LinearGradient(
                                             colors: [
-                                                Color.indigo.opacity(0.15),
-                                                Color.purple.opacity(0.1),
+                                                Color.indigo.opacity(0.08),
+                                                Color.purple.opacity(0.05),
                                             ], startPoint: .topLeading, endPoint: .bottomTrailing))
                             )
                             .padding(.horizontal)
-                            .animation(.easeOut, value: dayByDayData.map { $0.minutes })
+                            .animation(.easeOut, value: zoneHoursData.map { $0.hours })
                             .transition(.scale)
                         }
                     }

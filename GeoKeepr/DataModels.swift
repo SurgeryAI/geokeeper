@@ -23,7 +23,7 @@ final class TrackedLocation: Identifiable {
     var iconName: String = "mappin.circle.fill"
 
     /// The category of the location.
-    var category: LocationCategory? = .other
+    var category: LocationCategory? = .some(LocationCategory.other)
 
     /// Returns the actual category, or .other if nil (for safe UI usage)
     var fallbackCategory: LocationCategory { category ?? .other }
@@ -37,7 +37,7 @@ final class TrackedLocation: Identifiable {
 
     init(
         id: UUID = UUID(), name: String, latitude: Double, longitude: Double, radius: Double,
-        iconName: String = "mappin.circle.fill", category: LocationCategory? = .other
+        iconName: String = "mappin.circle.fill", category: LocationCategory? = .some(LocationCategory.other)
     ) {
         self.id = id
         self.name = name
@@ -121,3 +121,4 @@ final class LocationLog: Identifiable {
         return formatter.string(from: entry, to: exit) ?? "0m"
     }
 }
+

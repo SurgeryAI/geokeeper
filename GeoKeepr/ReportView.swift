@@ -171,12 +171,17 @@ struct ReportView: View {
                 zoneMinutes[log.locationName, default: 0] += log.durationInMinutes
             }
 
-            // Add active sessions that started on this day
+            // Add active sessions - include time spent TODAY regardless of when they entered
             for zone in activeZones {
                 guard let entryTime = zone.entryTime else { continue }
-                if entryTime >= startOfDay && entryTime < endOfDay {
-                    let minutesSoFar = Int(chartNow.timeIntervalSince(entryTime) / 60)
-                    zoneMinutes[zone.name, default: 0] += minutesSoFar
+
+                // Calculate how much time was spent in this zone during this specific day
+                let sessionStart = max(entryTime, startOfDay)
+                let sessionEnd = min(chartNow, endOfDay)
+
+                if sessionStart < sessionEnd {
+                    let minutesThisDay = Int(sessionEnd.timeIntervalSince(sessionStart) / 60)
+                    zoneMinutes[zone.name, default: 0] += minutesThisDay
                 }
             }
 

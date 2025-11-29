@@ -81,9 +81,9 @@ enum LocationCategory: String, Codable, CaseIterable, Identifiable {
 
     var description: String {
         switch self {
-        case .home: return "Home (Sanctuary & Residence)"
-        case .other: return "Other (Catch-all for unique spots)"
-        default: return rawValue
+        case .home: return "Sanctuary & Residence"
+        case .other: return "Catch-all for unique spots"
+        default: return ""
         }
     }
 }
@@ -122,4 +122,3 @@ final class LocationLog: Identifiable {
         return formatter.string(from: entry, to: exit) ?? "0m"
     }
 }
-

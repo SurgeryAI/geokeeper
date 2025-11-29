@@ -24,15 +24,18 @@ class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         manager.allowsBackgroundLocationUpdates = true
         manager.desiredAccuracy = kCLLocationAccuracyBest
 
-        // Request necessary permissions
-        manager.requestAlwaysAuthorization()
+        // Defer heavy setup to allow app launch to complete UI rendering first
+        DispatchQueue.main.async {
+            // Request necessary permissions
+            self.manager.requestAlwaysAuthorization()
 
-        // Energy Optimization: Use significant changes for background tracking
-        // This is much more battery efficient than startUpdatingLocation()
-        manager.startMonitoringSignificantLocationChanges()
+            // Energy Optimization: Use significant changes for background tracking
+            // This is much more battery efficient than startUpdatingLocation()
+            self.manager.startMonitoringSignificantLocationChanges()
 
-        // Request notification permissions
-        requestNotificationPermission()
+            // Request notification permissions
+            self.requestNotificationPermission()
+        }
     }
 
     // MARK: - Energy Optimization

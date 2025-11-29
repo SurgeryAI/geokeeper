@@ -127,10 +127,6 @@ struct ZoneCategoryView: View {
                         .clipShape(Circle())
                         .shadow(radius: 5)
 
-                    Text(category.rawValue)
-                        .font(.title)
-                        .bold()
-
                     Text(category.description)
                         .foregroundStyle(.secondary)
                         .multilineTextAlignment(.center)

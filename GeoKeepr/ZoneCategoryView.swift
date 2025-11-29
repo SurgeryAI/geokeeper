@@ -176,7 +176,7 @@ struct ZoneCategoryView: View {
 
                 // Chart
                 VStack(alignment: .leading, spacing: 12) {
-                    Text("Hours Per Day (Last 30 Days)")
+                    Text("Hours Per Day")
                         .font(.title2)
                         .bold()
                         .padding(.horizontal)

@@ -132,7 +132,6 @@ struct ZoneCategoryView: View {
                         .bold()
 
                     Text(category.description)
-                        .font(.subheadline)
                         .foregroundStyle(.secondary)
                         .multilineTextAlignment(.center)
                         .padding(.horizontal)
@@ -226,7 +225,7 @@ struct ZoneCategoryView: View {
 
                 // Zone List
                 VStack(alignment: .leading, spacing: 12) {
-                    Text("Zones in \(category.rawValue)")
+                    Text("Zones")
                         .font(.title2)
                         .bold()
                         .padding(.horizontal)

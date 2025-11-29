@@ -107,6 +107,10 @@ struct MapSetupView: View {
             // 1. Stop monitoring the old region (important if name or radius changed)
             locationManager.stopMonitoring(location: locationToUpdate)
 
+            // Check if name changed to update logs
+            let oldName = locationToUpdate.name
+            let nameChanged = oldName != trimmedName
+
             // 2. Update model properties
             locationToUpdate.name = trimmedName
             locationToUpdate.latitude = coordinate.latitude
@@ -114,6 +118,26 @@ struct MapSetupView: View {
             locationToUpdate.radius = newLocationRadius
             locationToUpdate.iconName = selectedIcon  // Save the updated icon
             locationToUpdate.category = selectedCategory  // Save the updated category
+
+            // Update associated logs if name changed
+            if nameChanged {
+                do {
+                    // Fetch all logs with the old name
+                    // Note: In a real app, using a relationship or UUID in logs would be better
+                    let descriptor = FetchDescriptor<LocationLog>(
+                        predicate: #Predicate { $0.locationName == oldName }
+                    )
+                    let logsToUpdate = try modelContext.fetch(descriptor)
+
+                    for log in logsToUpdate {
+                        log.locationName = trimmedName
+                    }
+                    print(
+                        "Updated \(logsToUpdate.count) logs from '\(oldName)' to '\(trimmedName)'")
+                } catch {
+                    print("Failed to update logs for renamed location: \(error)")
+                }
+            }
 
             // 3. Start monitoring the new (updated) region
             locationManager.startMonitoring(location: locationToUpdate)

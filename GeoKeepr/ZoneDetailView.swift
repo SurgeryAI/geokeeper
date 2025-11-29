@@ -387,13 +387,30 @@ struct ZoneDetailView: View {
         // Stop monitoring old region
         locationManager.stopMonitoring(location: location)
 
+        // Check if name changed
+        let oldName = location.name
+        let newName = editName.trimmingCharacters(in: .whitespacesAndNewlines)
+        let nameChanged = oldName != newName
+
         // Update
-        location.name = editName.trimmingCharacters(in: .whitespacesAndNewlines)
+        location.name = newName
         location.radius = editRadius
         location.iconName = editIcon
         location.category = editCategory
 
         do {
+            // Update logs if name changed
+            if nameChanged {
+                let descriptor = FetchDescriptor<LocationLog>(
+                    predicate: #Predicate { $0.locationName == oldName }
+                )
+                let logsToUpdate = try modelContext.fetch(descriptor)
+                for log in logsToUpdate {
+                    log.locationName = newName
+                }
+                print("Updated \(logsToUpdate.count) logs from '\(oldName)' to '\(newName)'")
+            }
+
             try modelContext.save()
             // Restart monitoring
             locationManager.startMonitoring(location: location)

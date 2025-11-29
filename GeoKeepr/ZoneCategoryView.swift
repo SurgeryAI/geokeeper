@@ -127,10 +127,12 @@ struct ZoneCategoryView: View {
                         .clipShape(Circle())
                         .shadow(radius: 5)
 
-                    Text(category.description)
-                        .foregroundStyle(.secondary)
-                        .multilineTextAlignment(.center)
-                        .padding(.horizontal)
+                    if !category.description.isEmpty {
+                        Text(category.description)
+                            .foregroundStyle(.secondary)
+                            .multilineTextAlignment(.center)
+                            .padding(.horizontal)
+                    }
                 }
                 .padding(.top)
 
@@ -273,7 +275,7 @@ struct ZoneCategoryView: View {
             .padding(.bottom)
         }
         .background(Color.gray.opacity(0.05))
-        .navigationTitle(category.rawValue)
+        .navigationTitle("\(category.rawValue) Category")
         .navigationBarTitleDisplayMode(.inline)
     }
 }

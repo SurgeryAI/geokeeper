@@ -142,34 +142,39 @@ struct ReportView: View {
     var workHoursLastWeek: (hours: Double, isComplete: Bool)? {
         let calendar = Calendar.current
         let now = Date()
-        
+
         // Find the most recent Sunday (end of last week)
-        guard let endOfLastWeek = calendar.date(byAdding: .day, value: -calendar.component(.weekday, from: now), to: now) else {
+        guard
+            let endOfLastWeek = calendar.date(
+                byAdding: .day, value: -calendar.component(.weekday, from: now), to: now)
+        else {
             return nil
         }
-        
+
         // Find the Monday of that week (start of last week)
-        guard let startOfLastWeek = calendar.date(byAdding: .day, value: -6, to: endOfLastWeek) else {
+        guard let startOfLastWeek = calendar.date(byAdding: .day, value: -6, to: endOfLastWeek)
+        else {
             return nil
         }
-        
+
         // Get all work logs from last week
         let workLogs = filteredLogs.filter { log in
             // You'll need to identify work zones - this assumes zones named "Work" or containing "work"
-            let isWorkZone = log.locationName.lowercased().contains("work") ||
-                             log.locationName.lowercased().contains("office") ||
-                             log.locationName.lowercased().contains("job")
+            let isWorkZone =
+                log.locationName.lowercased().contains("work")
+                || log.locationName.lowercased().contains("office")
+                || log.locationName.lowercased().contains("job")
             return isWorkZone && log.entry >= startOfLastWeek && log.entry <= endOfLastWeek
         }
-        
+
         // Calculate total work hours
         let totalMinutes = workLogs.reduce(0) { $0 + $1.durationInMinutes }
         let totalHours = Double(totalMinutes) / 60.0
-        
+
         // Check if we have data for all 7 days (basic completeness check)
         let daysWithData = Set(workLogs.map { calendar.startOfDay(for: $0.entry) })
-        let isCompleteWeek = daysWithData.count >= 5 // At least 5 days of data
-        
+        let isCompleteWeek = daysWithData.count >= 5  // At least 5 days of data
+
         return totalHours > 0 ? (totalHours, isCompleteWeek) : nil
     }
 
@@ -178,31 +183,32 @@ struct ReportView: View {
         let calendar = Calendar.current
         let now = Date()
         let thirtyDaysAgo = calendar.date(byAdding: .day, value: -30, to: now)!
-        
+
         // Get all work logs from last 30 days
         let workLogs = filteredLogs.filter { log in
-            let isWorkZone = log.locationName.lowercased().contains("work") ||
-                             log.locationName.lowercased().contains("office") ||
-                             log.locationName.lowercased().contains("job")
+            let isWorkZone =
+                log.locationName.lowercased().contains("work")
+                || log.locationName.lowercased().contains("office")
+                || log.locationName.lowercased().contains("job")
             return isWorkZone && log.entry >= thirtyDaysAgo && log.entry <= now
         }
-        
+
         guard !workLogs.isEmpty else { return nil }
-        
+
         // Group logs by week
         var weeklyHours: [Double] = []
         let weekGroups = Dictionary(grouping: workLogs) { log in
             calendar.component(.yearForWeekOfYear, from: log.entry)
         }
-        
+
         for (_, weekLogs) in weekGroups {
             let weekMinutes = weekLogs.reduce(0) { $0 + $1.durationInMinutes }
             let weekHours = Double(weekMinutes) / 60.0
             weeklyHours.append(weekHours)
         }
-        
+
         guard !weeklyHours.isEmpty else { return nil }
-        
+
         let average = weeklyHours.reduce(0, +) / Double(weeklyHours.count)
         return (average, weeklyHours.count)
     }
@@ -351,7 +357,6 @@ struct ReportView: View {
                                 .animation(.easeOut, value: topZone.minutes)
                             }
 
-                            
                             // Longest Session Card
                             if let longestSession {
                                 InsightCardView(
@@ -369,39 +374,46 @@ struct ReportView: View {
                                 .animation(.easeOut, value: longestSession.durationInMinutes)
                             }
                             if let workHours = workHoursLastWeek {
-                                        InsightCardView(
-                                            icon: Image(systemName: "briefcase.fill"),
-                                            iconColor: .blue,
-                                            title: "Work Hours Last Week",
-                                            mainText: formatWorkHours(workHours.hours, isComplete: workHours.isComplete),
-                                            detailText: workHours.isComplete ? "Complete week" : "Partial data"
-                                        )
-                                        .accessibilityElement(children: .combine)
-                                        .accessibilityLabel("Work hours last week: \(formatWorkHours(workHours.hours, isComplete: workHours.isComplete)), \(workHours.isComplete ? "complete week" : "partial data")")
-                                        .transition(.scale.combined(with: .opacity))
-                                        .animation(.easeOut, value: workHours.hours)
-                                    }
-                                    
-                                    // NEW: Average Work Hours Card
-                                    if let avgWorkHours = averageWorkHoursPerWeek {
-                                        InsightCardView(
-                                            icon: Image(systemName: "chart.line.uptrend.xyaxis"),
-                                            iconColor: .green,
-                                            title: "Avg Work Hours/Week",
-                                            mainText: formatAverageWorkHours(avgWorkHours.average, weeksCount: avgWorkHours.weeksCount),
-                                            detailText: "Last \(avgWorkHours.weeksCount) week\(avgWorkHours.weeksCount == 1 ? "" : "s")"
-                                        )
-                                        .accessibilityElement(children: .combine)
-                                        .accessibilityLabel("Average work hours per week: \(formatAverageWorkHours(avgWorkHours.average, weeksCount: avgWorkHours.weeksCount)) over last \(avgWorkHours.weeksCount) week\(avgWorkHours.weeksCount == 1 ? "" : "s")")
-                                        .transition(.scale.combined(with: .opacity))
-                                        .animation(.easeOut, value: avgWorkHours.average)
-                                    }
+                                InsightCardView(
+                                    icon: Image(systemName: "briefcase.fill"),
+                                    iconColor: .blue,
+                                    title: "Work Hours Last Week",
+                                    mainText: formatWorkHours(
+                                        workHours.hours, isComplete: workHours.isComplete),
+                                    detailText: workHours.isComplete
+                                        ? "Complete week" : "Partial data"
+                                )
+                                .accessibilityElement(children: .combine)
+                                .accessibilityLabel(
+                                    "Work hours last week: \(formatWorkHours(workHours.hours, isComplete: workHours.isComplete)), \(workHours.isComplete ? "complete week" : "partial data")"
+                                )
+                                .transition(.scale.combined(with: .opacity))
+                                .animation(.easeOut, value: workHours.hours)
+                            }
+
+                            // NEW: Average Work Hours Card
+                            if let avgWorkHours = averageWorkHoursPerWeek {
+                                InsightCardView(
+                                    icon: Image(systemName: "chart.line.uptrend.xyaxis"),
+                                    iconColor: .green,
+                                    title: "Avg Work Hours/Week",
+                                    mainText: formatAverageWorkHours(
+                                        avgWorkHours.average, weeksCount: avgWorkHours.weeksCount),
+                                    detailText:
+                                        "Last \(avgWorkHours.weeksCount) week\(avgWorkHours.weeksCount == 1 ? "" : "s")"
+                                )
+                                .accessibilityElement(children: .combine)
+                                .accessibilityLabel(
+                                    "Average work hours per week: \(formatAverageWorkHours(avgWorkHours.average, weeksCount: avgWorkHours.weeksCount)) over last \(avgWorkHours.weeksCount) week\(avgWorkHours.weeksCount == 1 ? "" : "s")"
+                                )
+                                .transition(.scale.combined(with: .opacity))
+                                .animation(.easeOut, value: avgWorkHours.average)
+                            }
                         }
                         .padding(.horizontal)
                     }
 
                     // MARK: - Banner for First & Most Recent Visit + Streak
-
 
                     // MARK: - Zone Activity Chart (last 7 days)
                     if !logs.isEmpty {
@@ -440,7 +452,13 @@ struct ReportView: View {
                                 colorForZone(zoneName)
                             }
                             .chartLegend(position: .bottom, alignment: .leading) {
-                                VStack(alignment: .leading, spacing: 8) {
+                                LazyVGrid(
+                                    columns: [
+                                        GridItem(.adaptive(minimum: 100, maximum: 150), spacing: 12)
+                                    ],
+                                    alignment: .leading,
+                                    spacing: 8
+                                ) {
                                     ForEach(uniqueZoneNames, id: \.self) { zoneName in
                                         HStack(spacing: 6) {
                                             RoundedRectangle(cornerRadius: 3)
@@ -449,6 +467,7 @@ struct ReportView: View {
                                             Text(zoneName)
                                                 .font(.caption)
                                                 .foregroundColor(.secondary)
+                                                .lineLimit(1)
                                         }
                                     }
                                 }

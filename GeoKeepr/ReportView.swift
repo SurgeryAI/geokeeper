@@ -558,6 +558,7 @@ struct ReportView: View {
                                                 .frame(width: 12, height: 12)
                                             Text(zoneName)
                                                 .font(.caption)
+                                                .italic()
                                                 .foregroundColor(.secondary)
                                                 .lineLimit(1)
                                         }
@@ -637,6 +638,7 @@ struct ReportView: View {
                                                 .frame(width: 12, height: 12)
                                             Text(category.rawValue)
                                                 .font(.caption)
+                                                .bold()
                                                 .foregroundColor(.secondary)
                                                 .lineLimit(1)
                                         }
@@ -684,6 +686,7 @@ struct ReportView: View {
                                     Image(systemName: "location.fill")
                                         .foregroundColor(.green)
                                     Text(zone.name)
+                                        .italic()
                                         .fontWeight(.semibold)
                                     Spacer()
                                     // Display time in zone, forced to update by timer
@@ -819,6 +822,7 @@ struct ReportView: View {
                                         VStack(alignment: .leading, spacing: 4) {
                                             Text(log.locationName)
                                                 .font(.body)
+                                                .italic()
                                                 .fontWeight(.medium)
                                             Text(
                                                 log.entry.formatted(

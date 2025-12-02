@@ -247,6 +247,7 @@ struct ZoneCategoryView: View {
                                         VStack(alignment: .leading) {
                                             Text(location.name)
                                                 .font(.headline)
+                                                .italic()
                                                 .foregroundStyle(.primary)
 
                                             Text("Radius: \(Int(location.radius))m")
@@ -275,7 +276,7 @@ struct ZoneCategoryView: View {
             .padding(.bottom)
         }
         .background(Color.gray.opacity(0.05))
-        .navigationTitle("\(category.rawValue) Category")
+        .navigationTitle(category.rawValue)
         .navigationBarTitleDisplayMode(.inline)
     }
 }

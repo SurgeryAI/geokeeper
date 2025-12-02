@@ -250,6 +250,7 @@ struct ZoneDetailView: View {
                         HStack(spacing: 4) {
                             Image(systemName: location.fallbackCategory.icon)
                             Text(location.fallbackCategory.rawValue)
+                                .bold()
                         }
                         .font(.caption)
                         .fontWeight(.bold)

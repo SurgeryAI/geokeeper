@@ -34,6 +34,7 @@ struct DebugView: View {
                             VStack(alignment: .leading, spacing: 8) {
                                 Text(location.name)
                                     .font(.headline)
+                                    .italic()
 
                                 HStack(spacing: 12) {
                                     Button(action: { simulateEntry(for: location) }) {
@@ -206,6 +207,7 @@ struct LogsListView: View {
                         VStack(alignment: .leading, spacing: 4) {
                             Text(log.locationName)
                                 .font(.headline)
+                                .italic()
 
                             HStack {
                                 Text("Entry:")

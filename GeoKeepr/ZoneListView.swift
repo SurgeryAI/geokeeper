@@ -73,6 +73,7 @@ struct ZoneRowView: View {
                 HStack {
                     Text(location.name)
                         .font(.subheadline)
+                        .italic()
                     Spacer()
                     /*if isInside {
                         Text("ACTIVE")

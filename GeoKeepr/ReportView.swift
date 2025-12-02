@@ -315,6 +315,98 @@ struct ReportView: View {
         return colors[abs(zoneName.hashValue) % colors.count]
     }
 
+    // MARK: - Chart data for category-specific hours per day (last 7 days)
+    struct CategoryHours: Identifiable {
+        let id = UUID()
+        let category: LocationCategory
+        let day: Date
+        let hours: Double
+    }
+
+    var categoryHoursData: [CategoryHours] {
+        let calendar = Calendar.current
+        var data: [CategoryHours] = []
+
+        for offset in (0..<7).reversed() {
+            guard let date = calendar.date(byAdding: .day, value: -offset, to: Date()) else {
+                continue
+            }
+            let startOfDay = calendar.startOfDay(for: date)
+            let endOfDay = calendar.date(byAdding: .day, value: 1, to: startOfDay)!
+
+            // Calculate hours per category for this day
+            var categoryMinutes: [LocationCategory: Int] = [:]
+
+            // Add completed logs
+            let logsForDay = filteredLogs.filter {
+                $0.entry >= startOfDay && $0.entry < endOfDay
+            }
+            for log in logsForDay {
+                // Find the tracked location to get its category
+                if let location = trackedLocations.first(where: { $0.name == log.locationName }) {
+                    let category = location.fallbackCategory
+                    categoryMinutes[category, default: 0] += log.durationInMinutes
+                }
+            }
+
+            // Add active sessions - include time spent TODAY regardless of when they entered
+            for zone in activeZones {
+                guard let entryTime = zone.entryTime else { continue }
+
+                // Calculate how much time was spent in this zone during this specific day
+                let sessionStart = max(entryTime, startOfDay)
+                let sessionEnd = min(Date(), endOfDay)
+
+                if sessionStart < sessionEnd {
+                    let minutesThisDay = Int(sessionEnd.timeIntervalSince(sessionStart) / 60)
+                    let category = zone.fallbackCategory
+                    categoryMinutes[category, default: 0] += minutesThisDay
+                }
+            }
+
+            // Convert to hours and create CategoryHours entries
+            if categoryMinutes.isEmpty {
+                // For days with no data, add a placeholder entry with 0 hours
+                data.append(CategoryHours(category: .other, day: startOfDay, hours: 0))
+            } else {
+                for (category, minutes) in categoryMinutes.sorted(by: {
+                    $0.key.rawValue < $1.key.rawValue
+                }) {
+                    let hours = Double(minutes) / 60.0
+                    data.append(CategoryHours(category: category, day: startOfDay, hours: hours))
+                }
+            }
+        }
+        return data
+    }
+
+    // Get unique categories for color mapping (sorted for consistent ordering)
+    var uniqueCategories: [LocationCategory] {
+        // Get all categories from both logged locations and active zones
+        let loggedCategories = Set(
+            filteredLogs.compactMap { log in
+                trackedLocations.first(where: { $0.name == log.locationName })?.fallbackCategory
+            })
+        let activeCategories = Set(activeZones.map { $0.fallbackCategory })
+        return loggedCategories.union(activeCategories).sorted(by: { $0.rawValue < $1.rawValue })
+    }
+
+    // Color palette for categories
+    func colorForCategory(_ category: LocationCategory) -> Color {
+        switch category {
+        case .home: return .indigo
+        case .work: return .blue
+        case .social: return .pink
+        case .fitness: return .green
+        case .leisure: return .purple
+        case .errands: return .orange
+        case .dining: return .red
+        case .travel: return .cyan
+        case .nature: return .mint
+        case .other: return .gray
+        }
+    }
+
     // Helper function to format TimeInterval into H:M:S string
     private func formatTimeInterval(_ interval: TimeInterval) -> String {
         let formatter = DateComponentsFormatter()
@@ -482,6 +574,85 @@ struct ReportView: View {
                                             colors: [
                                                 Color.indigo.opacity(0.08),
                                                 Color.purple.opacity(0.05),
+                                            ], startPoint: .topLeading, endPoint: .bottomTrailing))
+                            )
+                            .padding(.horizontal)
+                        }
+                    }
+
+                    // MARK: - Category Activity Chart (last 7 days)
+                    if !logs.isEmpty {
+                        VStack(alignment: .leading, spacing: 12) {
+                            Text("Category Activity")
+                                .font(.title2)
+                                .bold()
+                                .padding(.horizontal)
+
+                            Chart(categoryHoursData) { categoryData in
+                                BarMark(
+                                    x: .value("Day", categoryData.day, unit: .day),
+                                    y: .value("Hours", categoryData.hours)
+                                )
+                                .foregroundStyle(
+                                    by: .value("Category", categoryData.category.rawValue))
+                            }
+                            .chartXAxis {
+                                AxisMarks(values: .stride(by: .day, count: 1)) { value in
+                                    AxisGridLine()
+                                    AxisTick()
+                                    AxisValueLabel(format: .dateTime.weekday(.narrow))
+                                }
+                            }
+                            .chartYAxis {
+                                AxisMarks(position: .leading) { value in
+                                    AxisGridLine()
+                                    AxisTick()
+                                    AxisValueLabel {
+                                        if let hours = value.as(Double.self) {
+                                            Text("\(Int(hours))h")
+                                        }
+                                    }
+                                }
+                            }
+                            .chartForegroundStyleScale { categoryName in
+                                // Find the category enum from the raw value
+                                if let category = LocationCategory(rawValue: categoryName) {
+                                    colorForCategory(category)
+                                } else {
+                                    Color.gray
+                                }
+                            }
+                            .chartLegend(position: .bottom, alignment: .leading) {
+                                LazyVGrid(
+                                    columns: [
+                                        GridItem(.adaptive(minimum: 100, maximum: 150), spacing: 12)
+                                    ],
+                                    alignment: .leading,
+                                    spacing: 8
+                                ) {
+                                    ForEach(uniqueCategories, id: \.self) { category in
+                                        HStack(spacing: 6) {
+                                            RoundedRectangle(cornerRadius: 3)
+                                                .fill(colorForCategory(category))
+                                                .frame(width: 12, height: 12)
+                                            Text(category.rawValue)
+                                                .font(.caption)
+                                                .foregroundColor(.secondary)
+                                                .lineLimit(1)
+                                        }
+                                    }
+                                }
+                                .padding(.top, 8)
+                            }
+                            .frame(height: 250)
+                            .padding()
+                            .background(
+                                RoundedRectangle(cornerRadius: 20)
+                                    .fill(
+                                        LinearGradient(
+                                            colors: [
+                                                Color.blue.opacity(0.08),
+                                                Color.cyan.opacity(0.05),
                                             ], startPoint: .topLeading, endPoint: .bottomTrailing))
                             )
                             .padding(.horizontal)

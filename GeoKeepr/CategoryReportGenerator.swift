@@ -74,12 +74,14 @@ struct CategoryReportGenerator {
                 )
             }.sorted { $0.startTime < $1.startTime }
 
-            let totalMinutes = sessions.reduce(0) { $0 + $1.durationMinutes }
+            let mergedSessions = mergeSessions(sessions)
+
+            let totalMinutes = mergedSessions.reduce(0) { $0 + $1.durationMinutes }
 
             dailyReports.append(
                 DailyReport(
                     date: currentDate,
-                    sessions: sessions,
+                    sessions: mergedSessions,
                     totalMinutes: totalMinutes,
                     notes: nil
                 ))
@@ -112,6 +114,37 @@ struct CategoryReportGenerator {
         let body = generateHTMLBody(summary: summary, dailyReports: dailyReports)
 
         return (subject, body)
+    }
+
+    private static func mergeSessions(_ sessions: [SessionDetail]) -> [SessionDetail] {
+        guard !sessions.isEmpty else { return [] }
+
+        var merged: [SessionDetail] = []
+        var currentSession = sessions[0]
+
+        for nextSession in sessions.dropFirst() {
+            // If next session starts before (or at) current session ends, they overlap
+            if nextSession.startTime <= currentSession.endTime {
+                // Extend current session if next session ends later
+                if nextSession.endTime > currentSession.endTime {
+                    let newDuration = Int(
+                        nextSession.endTime.timeIntervalSince(currentSession.startTime) / 60)
+                    currentSession = SessionDetail(
+                        startTime: currentSession.startTime,
+                        endTime: nextSession.endTime,
+                        durationMinutes: newDuration
+                    )
+                }
+                // If next session is fully contained, we just ignore it (currentSession already covers it)
+            } else {
+                // No overlap, push current and start new
+                merged.append(currentSession)
+                currentSession = nextSession
+            }
+        }
+        merged.append(currentSession)
+
+        return merged
     }
 
     // MARK: - HTML Generation

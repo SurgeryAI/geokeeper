@@ -6,7 +6,7 @@ import SwiftData
 @Model
 final class TrackedLocation: Identifiable {
     /// Unique identifier for the tracked location.
-    let id: UUID
+    @Attribute(.unique) var id: UUID
     /// Name of the location.
     var name: String
     /// Latitude coordinate.
@@ -92,18 +92,21 @@ enum LocationCategory: String, Codable, CaseIterable, Identifiable {
 @Model
 final class LocationLog: Identifiable {
     /// Unique identifier for the log entry.
-    let id: UUID
+    @Attribute(.unique) var id: UUID
     /// Name of the location logged.
     var locationName: String
+    /// ID of the location (for robust linking).
+    var locationId: UUID?
     /// Entry timestamp.
     var entry: Date
     /// Exit timestamp.
     var exit: Date
 
     /// Initializes a new LocationLog instance.
-    init(locationName: String, entry: Date, exit: Date) {
+    init(locationName: String, locationId: UUID? = nil, entry: Date, exit: Date) {
         self.id = UUID()
         self.locationName = locationName
+        self.locationId = locationId
         self.entry = entry
         self.exit = exit
     }

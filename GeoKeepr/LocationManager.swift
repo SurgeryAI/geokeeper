@@ -342,7 +342,9 @@ class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
             let exitTime = Date()
 
             // 1. Create and insert the LocationLog
-            let newLog = LocationLog(locationName: location.name, entry: entryTime, exit: exitTime)
+            let newLog = LocationLog(
+                locationName: location.name, locationId: location.id, entry: entryTime,
+                exit: exitTime)
             context.insert(newLog)
             print(
                 "[GeoKeeper] ✅ Created LocationLog for \(location.name). Duration: \(newLog.durationString)"

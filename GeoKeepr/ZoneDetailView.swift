@@ -84,8 +84,15 @@ struct ZoneDetailView: View {
     var dailyHoursData: [DailyHours] {
         let calendar = Calendar.current
         let now = Date()
+
+        // 1. Group logs by start of day (O(N))
+        let logsByDay = Dictionary(grouping: locationLogs) { log in
+            calendar.startOfDay(for: log.entry)
+        }
+
         var data: [DailyHours] = []
 
+        // 2. Iterate last 30 days (O(30))
         for dayOffset in (0..<30).reversed() {
             guard let date = calendar.date(byAdding: .day, value: -dayOffset, to: now) else {
                 continue
@@ -95,10 +102,10 @@ struct ZoneDetailView: View {
                 continue
             }
 
-            // Break up filtering and accumulation for clarity and compiler friendliness
-            let logsForDay = locationLogs.filter { log in
-                log.entry >= startOfDay && log.entry < endOfDay
-            }
+            // Fetch pre-grouped logs (O(1))
+            let logsForDay = logsByDay[startOfDay] ?? []
+
+            // Calculate minutes (O(M) where M is logs for that day)
             let minutesFromLogs = logsForDay.map { $0.durationInMinutes }.reduce(0, +)
 
             // Compute minutes from active session (if any)

@@ -90,10 +90,16 @@ struct CategoryReportGenerator {
         }
 
         // Calculate summary stats
-        let totalMinutes = filteredLogs.reduce(0) { $0 + $1.durationInMinutes }
+        // FIX: Use the daily reports (which have merged sessions) to calculate total time
+        // This prevents double-counting when zones overlap
+        let totalMinutes = dailyReports.reduce(0) { $0 + $1.totalMinutes }
         let totalHours = Double(totalMinutes) / 60.0
+
         let daysWithActivity = dailyReports.filter { $0.totalMinutes > 0 }.count
         let averageDailyHours = daysWithActivity > 0 ? totalHours / Double(daysWithActivity) : 0
+
+        // Session count is still useful from raw logs to know how many "events" occurred,
+        // but for duration we must use the merged view.
         let sessionCount = filteredLogs.count
         let averageSessionDuration = sessionCount > 0 ? totalHours / Double(sessionCount) : 0
 

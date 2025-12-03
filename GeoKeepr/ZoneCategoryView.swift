@@ -1,4 +1,5 @@
 import Charts
+import MessageUI
 import SwiftData
 import SwiftUI
 

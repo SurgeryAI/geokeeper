@@ -114,6 +114,17 @@ struct ZoneCategoryView: View {
         return data
     }
 
+    // MARK: - Email Report State
+
+    @State private var showingMailCompose = false
+    @State private var showingDateRangePicker = false
+    @State private var mailComposeResult: Result<MFMailComposeResult, Error>?
+    @State private var reportStartDate: Date = {
+        Calendar.current.date(byAdding: .day, value: -30, to: Date()) ?? Date()
+    }()
+    @State private var reportEndDate = Date()
+    @State private var showingMailUnavailableAlert = false
+
     var body: some View {
         ScrollView {
             VStack(spacing: 24) {
@@ -173,6 +184,40 @@ struct ZoneCategoryView: View {
                     )
                 }
                 .padding(.horizontal)
+
+                // Email Report Button
+                if !categoryLogs.isEmpty {
+                    VStack(spacing: 12) {
+                        Button(action: {
+                            showingDateRangePicker = true
+                        }) {
+                            HStack {
+                                Image(systemName: "envelope.fill")
+                                    .font(.title3)
+                                Text("Email Time Report")
+                                    .font(.headline)
+                                    .fontWeight(.semibold)
+                            }
+                            .frame(maxWidth: .infinity)
+                            .padding()
+                            .background(
+                                LinearGradient(
+                                    colors: [.indigo, .purple],
+                                    startPoint: .leading,
+                                    endPoint: .trailing
+                                )
+                            )
+                            .foregroundColor(.white)
+                            .cornerRadius(12)
+                            .shadow(radius: 3)
+                        }
+
+                        Text("Generate a detailed report for any date range")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                    .padding(.horizontal)
+                }
 
                 // Chart
                 VStack(alignment: .leading, spacing: 12) {
@@ -278,5 +323,70 @@ struct ZoneCategoryView: View {
         .background(Color.gray.opacity(0.05))
         .navigationTitle(category.rawValue)
         .navigationBarTitleDisplayMode(.inline)
+        .sheet(isPresented: $showingDateRangePicker) {
+            NavigationStack {
+                Form {
+                    Section("Report Period") {
+                        DatePicker(
+                            "Start Date",
+                            selection: $reportStartDate,
+                            displayedComponents: .date
+                        )
+                        DatePicker(
+                            "End Date",
+                            selection: $reportEndDate,
+                            displayedComponents: .date
+                        )
+                    }
+
+                    Section {
+                        Button("Generate Report") {
+                            showingDateRangePicker = false
+                            // Small delay to allow sheet to dismiss before checking mail capability
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                                if MailComposeView.canSendMail() {
+                                    showingMailCompose = true
+                                } else {
+                                    showingMailUnavailableAlert = true
+                                }
+                            }
+                        }
+                        .bold()
+                    }
+                }
+                .navigationTitle("Report Options")
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .cancellationAction) {
+                        Button("Cancel") {
+                            showingDateRangePicker = false
+                        }
+                    }
+                }
+            }
+            .presentationDetents([.medium])
+        }
+        .sheet(isPresented: $showingMailCompose) {
+            let report = CategoryReportGenerator.generateEmailReport(
+                category: category,
+                logs: categoryLogs,
+                startDate: reportStartDate,
+                endDate: reportEndDate
+            )
+
+            MailComposeView(
+                result: $mailComposeResult,
+                subject: report.subject,
+                messageBody: report.body,
+                isHTML: true
+            )
+        }
+        .alert("Cannot Send Email", isPresented: $showingMailUnavailableAlert) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(
+                "This device is not configured to send emails. Please set up an email account in Settings."
+            )
+        }
     }
 }

@@ -253,7 +253,7 @@ struct CategoryReportGenerator {
                     <h3 style="margin-top: 0;">Session Statistics</h3>
                     <p><strong>Number of Distinct Sessions:</strong> \(summary.sessionCount)</p>
                     <p><strong>Average Session Duration:</strong> \(formatHoursAndMinutes(summary.averageSessionDuration))</p>
-                    <p><em>All hours were logged within the defined \(summary.categoryName) zone coordinates via geolocation tracking.</em></p>
+                    <p><em>All hours were logged within the defined \(summary.categoryName) zone coordinates via GeoKeepr tracking.</em></p>
                 </div>
             """
 

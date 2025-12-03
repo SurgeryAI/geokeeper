@@ -213,7 +213,7 @@ struct ZoneCategoryView: View {
                             .shadow(radius: 3)
                         }
 
-                        Text("Generate a detailed report for any date range")
+                        Text("Generate a detailed report.")
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
@@ -269,7 +269,7 @@ struct ZoneCategoryView: View {
 
                 // Zone List
                 VStack(alignment: .leading, spacing: 12) {
-                    Text("Zones")
+                    Text("Zones within Category")
                         .font(.title2)
                         .bold()
                         .padding(.horizontal)

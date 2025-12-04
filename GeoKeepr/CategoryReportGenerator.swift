@@ -64,13 +64,27 @@ struct CategoryReportGenerator {
         let endOfPeriod = calendar.startOfDay(for: endDate)
 
         while currentDate <= endOfPeriod {
-            let logsForDay = logsByDay[currentDate] ?? []
+            let dayStart = currentDate
+            guard let dayEnd = calendar.date(byAdding: .day, value: 1, to: dayStart) else { break }
 
-            let sessions = logsForDay.map { log in
-                SessionDetail(
-                    startTime: log.entry,
-                    endTime: log.exit,
-                    durationMinutes: log.durationInMinutes
+            // FIX: Find logs that overlap with this day (handling overnight sessions)
+            // We check if the log overlaps [dayStart, dayEnd]
+            let overlappingLogs = filteredLogs.filter { log in
+                log.entry < dayEnd && log.exit > dayStart
+            }
+
+            let sessions = overlappingLogs.compactMap { log -> SessionDetail? in
+                // Clip the session to this day
+                let start = max(log.entry, dayStart)
+                let end = min(log.exit, dayEnd)
+
+                guard start < end else { return nil }
+
+                let durationMinutes = Int(end.timeIntervalSince(start) / 60)
+                return SessionDetail(
+                    startTime: start,
+                    endTime: end,
+                    durationMinutes: durationMinutes
                 )
             }.sorted { $0.startTime < $1.startTime }
 

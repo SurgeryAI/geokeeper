@@ -85,9 +85,21 @@ struct ZoneDetailView: View {
         let calendar = Calendar.current
         let now = Date()
 
-        // 1. Group logs by start of day (O(N))
-        let logsByDay = Dictionary(grouping: locationLogs) { log in
-            calendar.startOfDay(for: log.entry)
+        // 1. Group logs by day(s) they touch (O(N))
+        // A log can belong to multiple days if it spans midnight
+        var logsByDay: [Date: [LocationLog]] = [:]
+        for log in locationLogs {
+            let startDay = calendar.startOfDay(for: log.entry)
+            let endDay = calendar.startOfDay(for: log.exit)
+
+            var currentDay = startDay
+            while currentDay <= endDay {
+                logsByDay[currentDay, default: []].append(log)
+                guard let next = calendar.date(byAdding: .day, value: 1, to: currentDay) else {
+                    break
+                }
+                currentDay = next
+            }
         }
 
         var data: [DailyHours] = []
@@ -106,7 +118,13 @@ struct ZoneDetailView: View {
             let logsForDay = logsByDay[startOfDay] ?? []
 
             // Calculate minutes (O(M) where M is logs for that day)
-            let minutesFromLogs = logsForDay.map { $0.durationInMinutes }.reduce(0, +)
+            // FIX: Calculate intersection with the day to handle overnight sessions
+            let minutesFromLogs = logsForDay.reduce(0) { total, log in
+                let start = max(log.entry, startOfDay)
+                let end = min(log.exit, endOfDay)
+                guard start < end else { return total }
+                return total + Int(end.timeIntervalSince(start) / 60)
+            }
 
             // Compute minutes from active session (if any)
             var minutesFromCurrentSession = 0

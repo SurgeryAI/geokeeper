@@ -80,6 +80,23 @@ struct ZoneCategoryView: View {
             return (entry, now)
         }
 
+        // 1. Group logs by day(s) they touch (O(N))
+        // A log can belong to multiple days if it spans midnight
+        var logsByDay: [Date: [LocationLog]] = [:]
+        for log in categoryLogs {
+            let startDay = calendar.startOfDay(for: log.entry)
+            let endDay = calendar.startOfDay(for: log.exit)
+
+            var currentDay = startDay
+            while currentDay <= endDay {
+                logsByDay[currentDay, default: []].append(log)
+                guard let next = calendar.date(byAdding: .day, value: 1, to: currentDay) else {
+                    break
+                }
+                currentDay = next
+            }
+        }
+
         for dayOffset in (0..<30).reversed() {
             guard let date = calendar.date(byAdding: .day, value: -dayOffset, to: now) else {
                 continue
@@ -89,11 +106,16 @@ struct ZoneCategoryView: View {
                 continue
             }
 
-            // Logs for this day
-            let logsForDay = categoryLogs.filter { log in
-                log.entry >= startOfDay && log.entry < endOfDay
+            // Logs for this day (using pre-grouped map)
+            let logsForDay = logsByDay[startOfDay] ?? []
+
+            // Calculate intersection with the day to handle overnight sessions
+            let minutesFromLogs = logsForDay.reduce(0) { total, log in
+                let start = max(log.entry, startOfDay)
+                let end = min(log.exit, endOfDay)
+                guard start < end else { return total }
+                return total + Int(end.timeIntervalSince(start) / 60)
             }
-            let minutesFromLogs = logsForDay.map { $0.durationInMinutes }.reduce(0, +)
 
             // Active sessions for this day
             var minutesFromActive = 0

@@ -42,15 +42,41 @@ struct CategoryReportGenerator {
     static func generateEmailReport(
         category: LocationCategory,
         logs: [LocationLog],
+        activeLocations: [TrackedLocation] = [],  // Added active locations
         startDate: Date,
         endDate: Date
     ) -> (subject: String, body: String) {
 
         let calendar = Calendar.current
+        let now = Date()
+
+        // FIX: Ensure endDate covers the full day (23:59:59)
+        let adjustedEndDate =
+            calendar.date(bySettingHour: 23, minute: 59, second: 59, of: endDate) ?? endDate
+
+        // FIX: Synthesize temporary logs for active sessions
+        let activeLogs = activeLocations.compactMap { location -> LocationLog? in
+            guard let entryTime = location.entryTime else { return nil }
+            // Create a temporary log from entry until now (or end of report period)
+            let exitTime = min(now, adjustedEndDate)
+
+            // Only include if the session started before the report ends
+            guard entryTime < exitTime else { return nil }
+
+            return LocationLog(
+                locationName: location.name,
+                locationId: location.id,
+                entry: entryTime,
+                exit: exitTime
+            )
+        }
+
+        // Combine historical and active logs
+        let allLogs = logs + activeLogs
 
         // Filter logs to date range
-        let filteredLogs = logs.filter { log in
-            log.entry >= startDate && log.entry <= endDate
+        let filteredLogs = allLogs.filter { log in
+            log.entry >= startDate && log.entry <= adjustedEndDate
         }
 
         // Group logs by day

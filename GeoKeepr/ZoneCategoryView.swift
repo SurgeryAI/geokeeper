@@ -371,6 +371,7 @@ struct ZoneCategoryView: View {
             let report = CategoryReportGenerator.generateEmailReport(
                 category: category,
                 logs: categoryLogs,
+                activeLocations: categoryLocations,  // Pass active locations for current session tracking
                 startDate: reportStartDate,
                 endDate: reportEndDate
             )

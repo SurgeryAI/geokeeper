@@ -434,13 +434,15 @@ struct ReportView: View {
                 VStack(spacing: 24) {
 
                     // MARK: - Insights Cards Top Section
-                    if !logs.isEmpty {
+                    if !logs.isEmpty || !activeZones.isEmpty {
                         VStack(spacing: 16) {
                             // NEW: Weekly Life-Log Card
                             Button(action: {
                                 if let recap = WeeklyRecapGenerator.generate(
-                                    logs: logs, locations: trackedLocations)
-                                {
+                                    logs: logs,
+                                    locations: trackedLocations,
+                                    activeLocations: activeZones
+                                ) {
                                     showingStory = true
                                     weeklyRecap = recap
                                 }

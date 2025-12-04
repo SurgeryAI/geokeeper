@@ -55,9 +55,25 @@ enum WeeklyVibe: String {
 }
 
 struct WeeklyRecapGenerator {
-    static func generate(logs: [LocationLog], locations: [TrackedLocation]) -> WeeklyRecap? {
+    static func generate(
+        logs: [LocationLog], locations: [TrackedLocation], activeLocations: [TrackedLocation] = []
+    ) -> WeeklyRecap? {
         let calendar = Calendar.current
         let now = Date()
+
+        // Synthesize logs for active sessions
+        let activeLogs = activeLocations.compactMap { location -> LocationLog? in
+            guard let entryTime = location.entryTime else { return nil }
+            return LocationLog(
+                locationName: location.name,
+                locationId: location.id,
+                entry: entryTime,
+                exit: now
+            )
+        }
+
+        // Combine historical and active logs
+        let allLogs = logs + activeLogs
 
         // Last 7 days
         guard let sevenDaysAgo = calendar.date(byAdding: .day, value: -7, to: now) else {
@@ -65,7 +81,7 @@ struct WeeklyRecapGenerator {
         }
 
         // Filter logs
-        let recentLogs = logs.filter { $0.entry >= sevenDaysAgo }
+        let recentLogs = allLogs.filter { $0.entry >= sevenDaysAgo }
         if recentLogs.isEmpty { return nil }
 
         // Calculate total hours

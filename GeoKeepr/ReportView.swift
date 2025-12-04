@@ -19,6 +19,10 @@ struct ReportView: View {
     // State for empty state animation
     @State private var emptyStateAnimation = false
 
+    // State for Weekly Story
+    @State private var showingStory = false
+    @State private var weeklyRecap: WeeklyRecap?
+
     enum TimeRange: String, CaseIterable {
         case week = "Last 7 Days"
         case all = "All Time"
@@ -432,6 +436,40 @@ struct ReportView: View {
                     // MARK: - Insights Cards Top Section
                     if !logs.isEmpty {
                         VStack(spacing: 16) {
+                            // NEW: Weekly Life-Log Card
+                            Button(action: {
+                                if let recap = WeeklyRecapGenerator.generate(
+                                    logs: logs, locations: trackedLocations)
+                                {
+                                    showingStory = true
+                                    weeklyRecap = recap
+                                }
+                            }) {
+                                HStack {
+                                    VStack(alignment: .leading, spacing: 4) {
+                                        Text("Weekly Life-Log")
+                                            .font(.headline)
+                                            .foregroundColor(.white)
+                                        Text("Tap for your weekly story")
+                                            .font(.caption)
+                                            .foregroundColor(.white.opacity(0.8))
+                                    }
+                                    Spacer()
+                                    Image(systemName: "play.circle.fill")
+                                        .font(.title)
+                                        .foregroundColor(.white)
+                                }
+                                .padding()
+                                .background(
+                                    LinearGradient(
+                                        colors: [.pink, .orange], startPoint: .topLeading,
+                                        endPoint: .bottomTrailing)
+                                )
+                                .cornerRadius(16)
+                                .shadow(radius: 5)
+                            }
+                            .padding(.horizontal)
+
                             // Top Zone Card
                             if let topZone {
                                 InsightCardView(
@@ -862,6 +900,13 @@ struct ReportView: View {
             }
             .background(Color(UIColor.systemGroupedBackground))  // nice light gray background
             .navigationTitle("Reports")
+        }
+        .fullScreenCover(isPresented: $showingStory) {
+            if let recap = weeklyRecap {
+                StoryView(recap: recap) {
+                    showingStory = false
+                }
+            }
         }
     }
 }

@@ -1122,7 +1122,7 @@ struct ReportView: View {
                 .padding(.vertical)
             }
             .background(Color(UIColor.systemGroupedBackground))  // nice light gray background
-            .navigationTitle("Reports")
+            .navigationTitle("Insights")
         }
         .fullScreenCover(isPresented: $showingStory) {
             if let recap = weeklyRecap {

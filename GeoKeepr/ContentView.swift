@@ -24,7 +24,7 @@ struct ContentView: View {
             // Reports Tab
             ReportView()
                 .tabItem {
-                    Label("History", systemImage: "chart.pie.fill")
+                    Label("Insights", systemImage: "chart.pie.fill")
                 }
 
             #if DEBUG

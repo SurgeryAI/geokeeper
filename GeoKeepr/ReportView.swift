@@ -450,9 +450,11 @@ struct ReportView: View {
     // MARK: - Daily Breakdown Data
 
     // Aggregates total time per category for each day of the week (1=Sunday, ..., 7=Saturday)
+    // Aggregates total time per category for each day of the week (1=Sunday, ..., 7=Saturday)
     var aggregatedDailyBreakdown: [Int: [LocationCategory: Double]] {
         var breakdown: [Int: [LocationCategory: Double]] = [:]
         let calendar = Calendar.current
+        let now = Date()
 
         // Initialize empty dicts for all days to ensure we have entries
         for i in 1...7 {
@@ -470,25 +472,70 @@ struct ReportView: View {
             }
         }
 
-        // Process active zones (distribute time if spanning days? For simplicity, attribute to current day of week of entry)
-        // Better approach: Attribute to "Today" (current weekday) for the duration spent so far today.
-        // If session spans midnight, this simple logic puts it all on entry day or today.
-        // Given the "Active" nature, let's attribute to the current weekday (Today).
-        let currentWeekday = calendar.component(.weekday, from: Date())
-
+        // Process active zones
+        let currentWeekday = calendar.component(.weekday, from: now)
         for zone in activeZones {
             guard let entryTime = zone.entryTime else { continue }
-
-            // Check if entry time is within range (already handled by filteredLogs logic but good to be safe)
-            // Actually activeZones logic above filters by range for the *count*, but here we want to include it if it's relevant.
-            // If I'm in "Last Year" mode, active zone is relevant.
-
-            let durationMinutes = Date().timeIntervalSince(entryTime) / 60.0
+            let durationMinutes = now.timeIntervalSince(entryTime) / 60.0
             let category = zone.fallbackCategory
             breakdown[currentWeekday, default: [:]][category, default: 0] += durationMinutes / 60.0
         }
 
+        // Normalize by number of days in range
+        let rangeStartDate: Date
+        switch timeRange {
+        case .week:
+            rangeStartDate = calendar.date(byAdding: .day, value: -6, to: now)!
+        case .month:
+            rangeStartDate = calendar.date(byAdding: .day, value: -29, to: now)!
+        case .year:
+            rangeStartDate = calendar.date(byAdding: .year, value: -1, to: now)!
+        case .all:
+            rangeStartDate = logs.last?.entry ?? now
+        }
+
+        // Determine the actual start of data collection to avoid penalizing for time before the app was used
+        let earliestLogDate = logs.last?.entry
+        let earliestActiveDate = activeZones.compactMap { $0.entryTime }.min()
+
+        let dataStartDate: Date
+        if let logDate = earliestLogDate, let activeDate = earliestActiveDate {
+            dataStartDate = min(logDate, activeDate)
+        } else {
+            dataStartDate = earliestLogDate ?? earliestActiveDate ?? now
+        }
+
+        // Use the LATER of the two dates (range start or data start)
+        // But ensure we don't go into the future (though dataStartDate shouldn't be in future)
+        let effectiveStartDate = max(rangeStartDate, dataStartDate)
+
+        let weekdayCounts = countWeekdays(from: effectiveStartDate, to: now)
+
+        for (day, categories) in breakdown {
+            let count = max(1, weekdayCounts[day] ?? 1)
+            for (cat, hours) in categories {
+                breakdown[day]?[cat] = hours / Double(count)
+            }
+        }
+
         return breakdown
+    }
+
+    private func countWeekdays(from start: Date, to end: Date) -> [Int: Int] {
+        var counts: [Int: Int] = [:]
+        let calendar = Calendar.current
+        // Normalize to start of day to avoid partial day issues
+        let startDay = calendar.startOfDay(for: start)
+        let endDay = calendar.startOfDay(for: end)
+
+        var current = startDay
+        while current <= endDay {
+            let weekday = calendar.component(.weekday, from: current)
+            counts[weekday, default: 0] += 1
+            guard let next = calendar.date(byAdding: .day, value: 1, to: current) else { break }
+            current = next
+        }
+        return counts
     }
 
     // Helper to get day name from weekday number (1=Sun)
@@ -811,33 +858,34 @@ struct ReportView: View {
                                             Text(dayName(for: weekday))
                                                 .font(.headline)
 
-                                            if totalHours > 0 {
-                                                Chart {
-                                                    ForEach(
-                                                        dayData.sorted(by: {
-                                                            $0.key.rawValue < $1.key.rawValue
-                                                        }), id: \.key
-                                                    ) { category, hours in
-                                                        SectorMark(
-                                                            angle: .value("Hours", hours),
-                                                            innerRadius: .ratio(0.6),
-                                                            angularInset: 1.5
-                                                        )
-                                                        .cornerRadius(3)
-                                                        .foregroundStyle(colorForCategory(category))
-                                                    }
-                                                }
-                                                .frame(width: 120, height: 120)
-                                            } else {
-                                                Circle()
-                                                    .stroke(Color.gray.opacity(0.2), lineWidth: 8)
-                                                    .frame(width: 120, height: 120)
-                                                    .overlay(
-                                                        Text("No Data")
-                                                            .font(.caption2)
-                                                            .foregroundColor(.secondary)
+                                            Chart {
+                                                ForEach(
+                                                    dayData.sorted(by: {
+                                                        $0.key.rawValue < $1.key.rawValue
+                                                    }), id: \.key
+                                                ) { category, hours in
+                                                    SectorMark(
+                                                        angle: .value("Hours", hours),
+                                                        innerRadius: .ratio(0.6),
+                                                        angularInset: 1.5
                                                     )
+                                                    .cornerRadius(3)
+                                                    .foregroundStyle(colorForCategory(category))
+                                                }
+
+                                                // Untracked Segment
+                                                let untracked = max(0, 24.0 - totalHours)
+                                                if untracked > 0.1 {
+                                                    SectorMark(
+                                                        angle: .value("Hours", untracked),
+                                                        innerRadius: .ratio(0.6),
+                                                        angularInset: 1.5
+                                                    )
+                                                    .cornerRadius(3)
+                                                    .foregroundStyle(Color.gray.opacity(0.2))
+                                                }
                                             }
+                                            .frame(width: 120, height: 120)
                                         }
                                         .padding()
                                         .background(Color.gray.opacity(0.1))  // Use system background approximation

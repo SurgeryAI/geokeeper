@@ -996,7 +996,7 @@ struct ReportView: View {
                                     .font(.title2)
                             } description: {
                                 Text(
-                                    "Visit your zones or exit an active zone to generate duration logs."
+                                    "If you have not already, setup a zone in the Map tab or visit your zones or exit an active zone to generate duration logs."
                                 )
                                 .font(.callout)
                             }
@@ -1007,7 +1007,7 @@ struct ReportView: View {
                         }
                         .accessibilityElement(children: .combine)
                         .accessibilityLabel(
-                            "No data yet. Visit your zones or exit an active zone to generate duration logs."
+                            "If you have not already, setup a zone in the Map tab or visit your zones or exit an active zone to generate duration logs."
                         )
                     } else {
                         // MARK: - Summary Card

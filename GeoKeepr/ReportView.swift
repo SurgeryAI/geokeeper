@@ -25,15 +25,25 @@ struct ReportView: View {
 
     enum TimeRange: String, CaseIterable {
         case week = "Last 7 Days"
+        case month = "Last 30 Days"
+        case year = "Last Year"
         case all = "All Time"
     }
 
     var filteredLogs: [LocationLog] {
+        let calendar = Calendar.current
+        let now = Date()
         switch timeRange {
         case .all:
             return logs
         case .week:
-            let cutoff = Calendar.current.date(byAdding: .day, value: -7, to: Date())!
+            let cutoff = calendar.date(byAdding: .day, value: -7, to: now)!
+            return logs.filter { $0.entry > cutoff }
+        case .month:
+            let cutoff = calendar.date(byAdding: .day, value: -30, to: now)!
+            return logs.filter { $0.entry > cutoff }
+        case .year:
+            let cutoff = calendar.date(byAdding: .year, value: -1, to: now)!
             return logs.filter { $0.entry > cutoff }
         }
     }
@@ -54,10 +64,23 @@ struct ReportView: View {
         for zone in activeZones {
             if let entryTime = zone.entryTime {
                 // Only include if it matches the time range
-                if timeRange == .week {
-                    let cutoff = Calendar.current.date(byAdding: .day, value: -7, to: Date())!
-                    if entryTime < cutoff { continue }
+                // Only include if it matches the time range
+                let calendar = Calendar.current
+                let now = Date()
+                var cutoff: Date?
+
+                switch timeRange {
+                case .week:
+                    cutoff = calendar.date(byAdding: .day, value: -7, to: now)
+                case .month:
+                    cutoff = calendar.date(byAdding: .day, value: -30, to: now)
+                case .year:
+                    cutoff = calendar.date(byAdding: .year, value: -1, to: now)
+                case .all:
+                    cutoff = nil
                 }
+
+                if let cutoff = cutoff, entryTime < cutoff { continue }
 
                 let duration = Int(Date().timeIntervalSince(entryTime) / 60)
                 let currentTotal = report[zone.name] ?? 0
@@ -74,10 +97,23 @@ struct ReportView: View {
             guard let entryTime = zone.entryTime else { return total }
 
             // Only include if it matches the time range
-            if timeRange == .week {
-                let cutoff = Calendar.current.date(byAdding: .day, value: -7, to: Date())!
-                if entryTime < cutoff { return total }
+            // Only include if it matches the time range
+            let calendar = Calendar.current
+            let now = Date()
+            var cutoff: Date?
+
+            switch timeRange {
+            case .week:
+                cutoff = calendar.date(byAdding: .day, value: -7, to: now)
+            case .month:
+                cutoff = calendar.date(byAdding: .day, value: -30, to: now)
+            case .year:
+                cutoff = calendar.date(byAdding: .year, value: -1, to: now)
+            case .all:
+                cutoff = nil
             }
+
+            if let cutoff = cutoff, entryTime < cutoff { return total }
 
             return total + Int(Date().timeIntervalSince(entryTime) / 60)
         }
@@ -411,6 +447,58 @@ struct ReportView: View {
         }
     }
 
+    // MARK: - Daily Breakdown Data
+
+    // Aggregates total time per category for each day of the week (1=Sunday, ..., 7=Saturday)
+    var aggregatedDailyBreakdown: [Int: [LocationCategory: Double]] {
+        var breakdown: [Int: [LocationCategory: Double]] = [:]
+        let calendar = Calendar.current
+
+        // Initialize empty dicts for all days to ensure we have entries
+        for i in 1...7 {
+            breakdown[i] = [:]
+        }
+
+        // Process logs
+        for log in filteredLogs {
+            let weekday = calendar.component(.weekday, from: log.entry)
+            // Find category
+            if let location = trackedLocations.first(where: { $0.name == log.locationName }) {
+                let category = location.fallbackCategory
+                breakdown[weekday, default: [:]][category, default: 0] +=
+                    Double(log.durationInMinutes) / 60.0
+            }
+        }
+
+        // Process active zones (distribute time if spanning days? For simplicity, attribute to current day of week of entry)
+        // Better approach: Attribute to "Today" (current weekday) for the duration spent so far today.
+        // If session spans midnight, this simple logic puts it all on entry day or today.
+        // Given the "Active" nature, let's attribute to the current weekday (Today).
+        let currentWeekday = calendar.component(.weekday, from: Date())
+
+        for zone in activeZones {
+            guard let entryTime = zone.entryTime else { continue }
+
+            // Check if entry time is within range (already handled by filteredLogs logic but good to be safe)
+            // Actually activeZones logic above filters by range for the *count*, but here we want to include it if it's relevant.
+            // If I'm in "Last Year" mode, active zone is relevant.
+
+            let durationMinutes = Date().timeIntervalSince(entryTime) / 60.0
+            let category = zone.fallbackCategory
+            breakdown[currentWeekday, default: [:]][category, default: 0] += durationMinutes / 60.0
+        }
+
+        return breakdown
+    }
+
+    // Helper to get day name from weekday number (1=Sun)
+    func dayName(for weekday: Int) -> String {
+        let formatter = DateFormatter()
+        // weekday symbols are 0-indexed in array, but 1-indexed in component
+        // calendar.weekdaySymbols[0] is Sunday
+        return formatter.weekdaySymbols[weekday - 1]
+    }
+
     // Helper function to format TimeInterval into H:M:S string
     private func formatTimeInterval(_ interval: TimeInterval) -> String {
         let formatter = DateComponentsFormatter()
@@ -698,6 +786,72 @@ struct ReportView: View {
                                             ], startPoint: .topLeading, endPoint: .bottomTrailing))
                             )
                             .padding(.horizontal)
+                        }
+                    }
+
+                    // MARK: - Daily Breakdown (Pie Charts)
+                    if !logs.isEmpty {
+                        VStack(alignment: .leading, spacing: 12) {
+                            Text("Daily Breakdown")
+                                .font(.title2)
+                                .bold()
+                                .padding(.horizontal)
+
+                            ScrollView(.horizontal, showsIndicators: false) {
+                                HStack(spacing: 16) {
+                                    // Iterate 1...7 (Sun...Sat) or reorder to start with Mon?
+                                    // Let's start with Monday (2) -> Saturday (7) -> Sunday (1)
+                                    let orderedWeekdays = [2, 3, 4, 5, 6, 7, 1]
+
+                                    ForEach(orderedWeekdays, id: \.self) { weekday in
+                                        let dayData = aggregatedDailyBreakdown[weekday] ?? [:]
+                                        let totalHours = dayData.values.reduce(0, +)
+
+                                        VStack {
+                                            Text(dayName(for: weekday))
+                                                .font(.headline)
+
+                                            if totalHours > 0 {
+                                                Chart {
+                                                    ForEach(
+                                                        dayData.sorted(by: {
+                                                            $0.key.rawValue < $1.key.rawValue
+                                                        }), id: \.key
+                                                    ) { category, hours in
+                                                        SectorMark(
+                                                            angle: .value("Hours", hours),
+                                                            innerRadius: .ratio(0.6),
+                                                            angularInset: 1.5
+                                                        )
+                                                        .cornerRadius(3)
+                                                        .foregroundStyle(colorForCategory(category))
+                                                    }
+                                                }
+                                                .frame(width: 120, height: 120)
+
+                                                Text("\(String(format: "%.1f", totalHours))h")
+                                                    .font(.caption)
+                                                    .foregroundColor(.secondary)
+                                            } else {
+                                                Circle()
+                                                    .stroke(Color.gray.opacity(0.2), lineWidth: 8)
+                                                    .frame(width: 120, height: 120)
+                                                    .overlay(
+                                                        Text("No Data")
+                                                            .font(.caption2)
+                                                            .foregroundColor(.secondary)
+                                                    )
+                                            }
+                                        }
+                                        .padding()
+                                        .background(Color.gray.opacity(0.1))  // Use system background approximation
+                                        .cornerRadius(12)
+                                        .shadow(radius: 2)
+                                    }
+                                }
+                                .padding(.horizontal)
+                                .padding(.bottom, 10)  // Space for shadow
+                            }
                         }
                     }
 

@@ -10,7 +10,10 @@ struct StoryView: View {
     @State private var isPaused = false
 
     private let slideDuration: TimeInterval = 4.0
-    private let slideCount = 4
+
+    private var slideCount: Int {
+        recap.slides.count
+    }
 
     var body: some View {
         ZStack {
@@ -20,12 +23,23 @@ struct StoryView: View {
             // Content
             GeometryReader { geometry in
                 ZStack {
-                    switch currentSlideIndex {
-                    case 0: IntroSlide(recap: recap)
-                    case 1: GrindSlide(recap: recap)
-                    case 2: TopSpotSlide(recap: recap)
-                    case 3: VibeSlide(recap: recap)
-                    default: EmptyView()
+                    if currentSlideIndex < recap.slides.count {
+                        switch recap.slides[currentSlideIndex] {
+                        case .intro(let start, let end):
+                            IntroSlide(startDate: start, endDate: end)
+                        case .grind(let work, let personal):
+                            GrindSlide(workHours: work, personalHours: personal)
+                        case .topSpot(let name, let visits):
+                            TopSpotSlide(locationName: name, visits: visits)
+                        case .vibe(let vibe):
+                            VibeSlide(vibe: vibe)
+                        case .deepFocus(let location, let duration):
+                            DeepFocusSlide(location: location, duration: duration)
+                        case .newHorizons(let locations):
+                            NewHorizonsSlide(locations: locations)
+                        case .weekendWarrior(let weekend, let weekday):
+                            WeekendWarriorSlide(weekendHours: weekend, weekdayHours: weekday)
+                        }
                     }
                 }
                 .frame(width: geometry.size.width, height: geometry.size.height)
@@ -147,7 +161,8 @@ struct ProgressBarView: View {
 // MARK: - Slides
 
 struct IntroSlide: View {
-    let recap: WeeklyRecap
+    let startDate: Date
+    let endDate: Date
 
     var body: some View {
         VStack(spacing: 20) {
@@ -157,7 +172,7 @@ struct IntroSlide: View {
                 .multilineTextAlignment(.center)
                 .foregroundColor(.white)
 
-            Text("\(formatDate(recap.startDate)) - \(formatDate(recap.endDate))")
+            Text("\(formatDate(startDate)) - \(formatDate(endDate))")
                 .font(.headline)
                 .foregroundColor(.white.opacity(0.8))
 
@@ -182,7 +197,8 @@ struct IntroSlide: View {
 }
 
 struct GrindSlide: View {
-    let recap: WeeklyRecap
+    let workHours: Double
+    let personalHours: Double
 
     var body: some View {
         VStack(spacing: 30) {
@@ -199,7 +215,7 @@ struct GrindSlide: View {
                     Text("Work")
                         .font(.headline)
                         .foregroundColor(.white)
-                    Text(String(format: "%.1fh", recap.workHours))
+                    Text(String(format: "%.1fh", workHours))
                         .font(.title)
                         .bold()
                         .foregroundColor(.white)
@@ -211,7 +227,7 @@ struct GrindSlide: View {
                     Text("Life")
                         .font(.headline)
                         .foregroundColor(.white)
-                    Text(String(format: "%.1fh", recap.personalHours))
+                    Text(String(format: "%.1fh", personalHours))
                         .font(.title)
                         .bold()
                         .foregroundColor(.white)
@@ -226,7 +242,8 @@ struct GrindSlide: View {
 }
 
 struct TopSpotSlide: View {
-    let recap: WeeklyRecap
+    let locationName: String
+    let visits: Int
 
     var body: some View {
         VStack(spacing: 20) {
@@ -241,11 +258,15 @@ struct TopSpotSlide: View {
                 .foregroundColor(.yellow)
                 .shadow(radius: 10)
 
-            Text(recap.topLocationName ?? "Unknown")
+            Text(locationName)
                 .font(.system(size: 40, weight: .heavy))
                 .multilineTextAlignment(.center)
                 .foregroundColor(.white)
                 .padding()
+
+            Text("\(visits) visits")
+                .font(.title2)
+                .foregroundColor(.white.opacity(0.9))
 
             Spacer()
         }
@@ -255,7 +276,7 @@ struct TopSpotSlide: View {
 }
 
 struct VibeSlide: View {
-    let recap: WeeklyRecap
+    let vibe: WeeklyVibe
 
     var body: some View {
         VStack(spacing: 20) {
@@ -265,15 +286,15 @@ struct VibeSlide: View {
                 .bold()
                 .foregroundColor(.white)
 
-            Text(recap.vibe.emoji)
+            Text(vibe.emoji)
                 .font(.system(size: 120))
                 .shadow(radius: 20)
 
-            Text(recap.vibe.rawValue)
+            Text(vibe.rawValue)
                 .font(.system(size: 36, weight: .bold))
                 .foregroundColor(.white)
 
-            Text(recap.vibe.description)
+            Text(vibe.description)
                 .font(.title3)
                 .multilineTextAlignment(.center)
                 .foregroundColor(.white.opacity(0.9))
@@ -282,6 +303,141 @@ struct VibeSlide: View {
             Spacer()
         }
         .frame(maxWidth: .infinity)
-        .background(recap.vibe.color)
+        .background(vibe.color)
+    }
+}
+
+struct DeepFocusSlide: View {
+    let location: String
+    let duration: String
+
+    var body: some View {
+        VStack(spacing: 20) {
+            Spacer()
+            Text("Deep Focus")
+                .font(.largeTitle)
+                .bold()
+                .foregroundColor(.white)
+
+            Image(systemName: "brain.head.profile")
+                .font(.system(size: 100))
+                .foregroundColor(.cyan)
+                .shadow(radius: 10)
+
+            Text("Longest Session")
+                .font(.headline)
+                .foregroundColor(.white.opacity(0.8))
+
+            Text(location)
+                .font(.system(size: 32, weight: .bold))
+                .multilineTextAlignment(.center)
+                .foregroundColor(.white)
+
+            Text(duration)
+                .font(.system(size: 50, weight: .heavy))
+                .foregroundColor(.white)
+
+            Spacer()
+        }
+        .frame(maxWidth: .infinity)
+        .background(Color.indigo)
+    }
+}
+
+struct NewHorizonsSlide: View {
+    let locations: [String]
+
+    var body: some View {
+        VStack(spacing: 20) {
+            Spacer()
+            Text("New Horizons")
+                .font(.largeTitle)
+                .bold()
+                .foregroundColor(.white)
+
+            Image(systemName: "binoculars.fill")
+                .font(.system(size: 80))
+                .foregroundColor(.green)
+                .padding(.bottom)
+
+            Text("You explored \(locations.count) new place\(locations.count == 1 ? "" : "s")!")
+                .font(.title2)
+                .multilineTextAlignment(.center)
+                .foregroundColor(.white)
+                .padding(.horizontal)
+
+            VStack(spacing: 10) {
+                ForEach(locations.prefix(3), id: \.self) { loc in
+                    Text("• \(loc)")
+                        .font(.title3)
+                        .bold()
+                        .foregroundColor(.white)
+                }
+                if locations.count > 3 {
+                    Text("and \(locations.count - 3) more...")
+                        .font(.body)
+                        .foregroundColor(.white.opacity(0.8))
+                }
+            }
+            .padding()
+            .background(Color.white.opacity(0.1))
+            .cornerRadius(16)
+
+            Spacer()
+        }
+        .frame(maxWidth: .infinity)
+        .background(Color.teal)
+    }
+}
+
+struct WeekendWarriorSlide: View {
+    let weekendHours: Double
+    let weekdayHours: Double
+
+    var body: some View {
+        VStack(spacing: 30) {
+            Spacer()
+            Text("Weekend Warrior")
+                .font(.largeTitle)
+                .bold()
+                .foregroundColor(.white)
+
+            HStack(alignment: .bottom, spacing: 20) {
+                VStack {
+                    Text(String(format: "%.1fh", weekdayHours))
+                        .font(.headline)
+                        .foregroundColor(.white)
+                    Rectangle()
+                        .fill(Color.white.opacity(0.5))
+                        .frame(width: 50, height: 100)
+                    Text("Week")
+                        .font(.caption)
+                        .foregroundColor(.white)
+                }
+
+                VStack {
+                    Text(String(format: "%.1fh", weekendHours))
+                        .font(.title)
+                        .bold()
+                        .foregroundColor(.white)
+                    Rectangle()
+                        .fill(Color.yellow)
+                        .frame(width: 50, height: 180)
+                    Text("Weekend")
+                        .font(.headline)
+                        .bold()
+                        .foregroundColor(.white)
+                }
+            }
+
+            Text("You lived it up this weekend!")
+                .font(.title3)
+                .foregroundColor(.white)
+                .padding(.top)
+
+            Spacer()
+        }
+        .frame(maxWidth: .infinity)
+        .background(Color.pink)
     }
 }

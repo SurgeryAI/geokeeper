@@ -5,11 +5,30 @@ import SwiftUI
 struct WeeklyRecap {
     let startDate: Date
     let endDate: Date
-    let totalHours: Double
-    let workHours: Double
-    let personalHours: Double
-    let topLocationName: String?
+    let slides: [StorySlideType]
     let vibe: WeeklyVibe
+}
+
+enum StorySlideType: Identifiable {
+    case intro(startDate: Date, endDate: Date)
+    case grind(work: Double, personal: Double)
+    case topSpot(name: String, visits: Int)
+    case vibe(vibe: WeeklyVibe)
+    case deepFocus(location: String, duration: String)
+    case newHorizons(locations: [String])
+    case weekendWarrior(weekendHours: Double, weekdayHours: Double)
+
+    var id: String {
+        switch self {
+        case .intro: return "intro"
+        case .grind: return "grind"
+        case .topSpot: return "topSpot"
+        case .vibe: return "vibe"
+        case .deepFocus: return "deepFocus"
+        case .newHorizons: return "newHorizons"
+        case .weekendWarrior: return "weekendWarrior"
+        }
+    }
 }
 
 enum WeeklyVibe: String {
@@ -91,11 +110,10 @@ struct WeeklyRecapGenerator {
         // Map logs to categories
         var categoryMinutes: [LocationCategory: Int] = [:]
         var locationMinutes: [String: Int] = [:]
+        var locationVisits: [String: Int] = [:]
 
         for log in recentLogs {
             // Find category for this log
-            // Note: This relies on name matching since logs store name.
-            // Ideally we use locationId if available, falling back to name.
             let category: LocationCategory
             if let loc = locations.first(where: { $0.id == log.locationId }) {
                 category = loc.fallbackCategory
@@ -107,17 +125,14 @@ struct WeeklyRecapGenerator {
 
             categoryMinutes[category, default: 0] += log.durationInMinutes
             locationMinutes[log.locationName, default: 0] += log.durationInMinutes
+            locationVisits[log.locationName, default: 0] += 1
         }
 
         // Work vs Personal
         let workMins = categoryMinutes[.work] ?? 0
         let workHours = Double(workMins) / 60.0
-
         let personalMins = totalMinutes - workMins
         let personalHours = Double(personalMins) / 60.0
-
-        // Top Location
-        let topLocation = locationMinutes.max(by: { $0.value < $1.value })?.key
 
         // Determine Vibe
         let vibe: WeeklyVibe
@@ -139,13 +154,59 @@ struct WeeklyRecapGenerator {
             vibe = .balanced
         }
 
+        // --- Build Slides ---
+        var slides: [StorySlideType] = []
+
+        // 1. Intro (Always)
+        slides.append(.intro(startDate: sevenDaysAgo, endDate: now))
+
+        // 2. The Grind (Work/Life Balance) - Always interesting
+        slides.append(.grind(work: workHours, personal: personalHours))
+
+        // 3. Top Spot (if available)
+        if let topLocation = locationMinutes.max(by: { $0.value < $1.value }) {
+            let visits = locationVisits[topLocation.key] ?? 1
+            slides.append(.topSpot(name: topLocation.key, visits: visits))
+        }
+
+        // 4. Deep Focus (Longest Session)
+        if let longestSession = recentLogs.max(by: { $0.durationInMinutes < $1.durationInMinutes }),
+            longestSession.durationInMinutes > 120
+        {  // Only if > 2 hours
+            slides.append(
+                .deepFocus(
+                    location: longestSession.locationName, duration: longestSession.durationString))
+        }
+
+        // 5. New Horizons (New Locations visited this week)
+        // Check if any location in recentLogs was NOT visited before sevenDaysAgo
+        let oldLogs = allLogs.filter { $0.entry < sevenDaysAgo }
+        let oldLocationNames = Set(oldLogs.map { $0.locationName })
+        let newLocations = Set(recentLogs.map { $0.locationName }).subtracting(oldLocationNames)
+
+        if !newLocations.isEmpty {
+            slides.append(.newHorizons(locations: Array(newLocations).sorted()))
+        }
+
+        // 6. Weekend Warrior
+        let weekendLogs = recentLogs.filter { calendar.isDateInWeekend($0.entry) }
+        let weekendMinutes = weekendLogs.reduce(0) { $0 + $1.durationInMinutes }
+        let weekdayMinutes = totalMinutes - weekendMinutes
+
+        if Double(weekendMinutes) > Double(weekdayMinutes) * 0.5 && weekendMinutes > 120 {
+            slides.append(
+                .weekendWarrior(
+                    weekendHours: Double(weekendMinutes) / 60.0,
+                    weekdayHours: Double(weekdayMinutes) / 60.0))
+        }
+
+        // 7. Vibe (Always Last)
+        slides.append(.vibe(vibe: vibe))
+
         return WeeklyRecap(
             startDate: sevenDaysAgo,
             endDate: now,
-            totalHours: totalHours,
-            workHours: workHours,
-            personalHours: personalHours,
-            topLocationName: topLocation,
+            slides: slides,
             vibe: vibe
         )
     }

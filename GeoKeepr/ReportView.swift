@@ -686,7 +686,7 @@ struct ReportView: View {
                     if !logs.isEmpty {
                         VStack(alignment: .leading, spacing: 12) {
                             Text("Zone Activity")
-                                .font(.title2)
+                                .font(.title3)
                                 .bold()
                                 .padding(.horizontal)
 
@@ -760,7 +760,7 @@ struct ReportView: View {
                     if !logs.isEmpty {
                         VStack(alignment: .leading, spacing: 12) {
                             Text("Category Activity")
-                                .font(.title2)
+                                .font(.title3)
                                 .bold()
                                 .padding(.horizontal)
 
@@ -840,7 +840,7 @@ struct ReportView: View {
                     if !logs.isEmpty {
                         VStack(alignment: .leading, spacing: 12) {
                             Text("Daily Breakdown")
-                                .font(.title2)
+                                .font(.title3)
                                 .bold()
                                 .padding(.horizontal)
 
@@ -993,7 +993,7 @@ struct ReportView: View {
 
                             ContentUnavailableView {
                                 Label("No Data Yet", systemImage: "chart.bar.xaxis")
-                                    .font(.title2)
+                                    .font(.title3)
                             } description: {
                                 Text(
                                     "If you have not already, setup a zone in the Map tab or visit your zones or exit an active zone to generate duration logs."

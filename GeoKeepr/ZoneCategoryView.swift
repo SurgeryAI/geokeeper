@@ -142,9 +142,7 @@ struct ZoneCategoryView: View {
     @State private var showingMailCompose = false
     @State private var showingDateRangePicker = false
     @State private var mailComposeResult: Result<MFMailComposeResult, Error>?
-    @State private var reportStartDate: Date = {
-        Calendar.current.date(byAdding: .day, value: -30, to: Date()) ?? Date()
-    }()
+    @State private var reportStartDate: Date = Date()  // Initialize with dummy, update in onAppear
     @State private var reportEndDate = Date()
     @State private var showingMailUnavailableAlert = false
 
@@ -411,6 +409,36 @@ struct ZoneCategoryView: View {
             Text(
                 "This device is not configured to send emails. Please set up an email account in Settings."
             )
+        }
+    }
+
+    private func updateReportStartDate() {
+        let calendar = Calendar.current
+        let thirtyDaysAgo = calendar.date(byAdding: .day, value: -30, to: Date()) ?? Date()
+
+        // Find the earliest data point
+        let earliestLog = categoryLogs.last?.entry
+        let earliestActive = categoryLocations.compactMap { $0.entryTime }.min()
+
+        let dataStart: Date
+        if let logStart = earliestLog, let activeStart = earliestActive {
+            dataStart = min(logStart, activeStart)
+        } else {
+            dataStart = earliestLog ?? earliestActive ?? Date()
+        }
+
+        // Use the LATER of 30 days ago or data start
+        // This ensures we don't default to a date before data existed
+        // But also defaults to a reasonable range (last 30 days) if data is old
+
+        // Wait, user said: "it should never go back further than the first day that data was collected."
+        // So if data started 10 days ago, start date should be 10 days ago.
+        // If data started 1 year ago, default to 30 days ago.
+
+        if dataStart > thirtyDaysAgo {
+            reportStartDate = dataStart
+        } else {
+            reportStartDate = thirtyDaysAgo
         }
     }
 }

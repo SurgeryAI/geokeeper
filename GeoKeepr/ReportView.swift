@@ -828,10 +828,6 @@ struct ReportView: View {
                                                     }
                                                 }
                                                 .frame(width: 120, height: 120)
-
-                                                Text("\(String(format: "%.1f", totalHours))h")
-                                                    .font(.caption)
-                                                    .foregroundColor(.secondary)
                                             } else {
                                                 Circle()
                                                     .stroke(Color.gray.opacity(0.2), lineWidth: 8)
@@ -845,13 +841,35 @@ struct ReportView: View {
                                         }
                                         .padding()
                                         .background(Color.gray.opacity(0.1))  // Use system background approximation
-                                        .cornerRadius(12)
                                         .shadow(radius: 2)
                                     }
                                 }
                                 .padding(.horizontal)
                                 .padding(.bottom, 10)  // Space for shadow
                             }
+
+                            // Legend
+                            LazyVGrid(
+                                columns: [
+                                    GridItem(.adaptive(minimum: 100, maximum: 150), spacing: 12)
+                                ],
+                                alignment: .leading,
+                                spacing: 8
+                            ) {
+                                ForEach(uniqueCategories, id: \.self) { category in
+                                    HStack(spacing: 6) {
+                                        RoundedRectangle(cornerRadius: 3)
+                                            .fill(colorForCategory(category))
+                                            .frame(width: 12, height: 12)
+                                        Text(category.rawValue)
+                                            .font(.caption)
+                                            .bold()
+                                            .foregroundColor(.secondary)
+                                            .lineLimit(1)
+                                    }
+                                }
+                            }
+                            .padding(.horizontal)
                         }
                     }
 
@@ -976,9 +994,10 @@ struct ReportView: View {
                                 ForEach(
                                     aggregatedData.sorted(by: { $0.value > $1.value }), id: \.key
                                 ) { (name, minutes) in
+                                    let hours = Double(minutes) / 60.0
                                     BarMark(
                                         x: .value("Location", name),
-                                        y: .value("Minutes", minutes)
+                                        y: .value("Hours", hours)
                                     )
                                     .foregroundStyle(
                                         LinearGradient(
@@ -987,7 +1006,7 @@ struct ReportView: View {
                                     )
                                     .cornerRadius(5)
                                     .annotation(position: .top) {
-                                        Text("\(minutes)")
+                                        Text(String(format: "%.1fh", hours))
                                             .font(.caption2)
                                             .foregroundColor(.indigo)
                                             .bold()

@@ -447,6 +447,71 @@ struct ReportView: View {
         }
     }
 
+    // MARK: - Zone Distribution Data
+
+    struct ZoneDistributionItem: Identifiable {
+        let id = UUID()
+        let name: String
+        let hours: Double
+        let color: Color
+        let isUnaccounted: Bool
+    }
+
+    var zoneDistributionData: [ZoneDistributionItem] {
+        let totalHours: Double
+        switch timeRange {
+        case .week:
+            totalHours = 7 * 24
+        case .month:
+            totalHours = 30 * 24
+        case .year:
+            totalHours = 365 * 24
+        case .all:
+            // For "All Time", we need to calculate the duration from the first log
+            if let first = firstVisitDate {
+                let days = max(
+                    1, Calendar.current.dateComponents([.day], from: first, to: Date()).day ?? 1)
+                totalHours = Double(days) * 24
+            } else {
+                totalHours = 24  // Fallback
+            }
+        }
+
+        var items: [ZoneDistributionItem] = []
+        var trackedHours: Double = 0
+
+        // Add tracked zones
+        for (name, minutes) in aggregatedData {
+            let hours = Double(minutes) / 60.0
+            trackedHours += hours
+            items.append(
+                ZoneDistributionItem(
+                    name: name,
+                    hours: hours,
+                    color: colorForZone(name),
+                    isUnaccounted: false
+                ))
+        }
+
+        // Add unaccounted time
+        let unaccounted = max(0, totalHours - trackedHours)
+        if unaccounted > 0 {
+            items.append(
+                ZoneDistributionItem(
+                    name: "Unaccounted",
+                    hours: unaccounted,
+                    color: Color.gray.opacity(0.3),
+                    isUnaccounted: true
+                ))
+        }
+
+        return items.sorted {
+            if $0.isUnaccounted { return false }  // Unaccounted at the end
+            if $1.isUnaccounted { return true }
+            return $0.hours > $1.hours
+        }
+    }
+
     // MARK: - Daily Breakdown Data
 
     // Aggregates total time per category for each day of the week (1=Sunday, ..., 7=Saturday)
@@ -614,11 +679,12 @@ struct ReportView: View {
                                     iconColor: .yellow,
                                     title: "Most Time Spent",
                                     mainText: topZone.name,
-                                    detailText: "\(topZone.minutes) min"
+                                    detailText: String(
+                                        format: "%.1f h", Double(topZone.minutes) / 60.0)
                                 )
                                 .accessibilityElement(children: .combine)
                                 .accessibilityLabel(
-                                    "Most time spent in \(topZone.name), \(topZone.minutes) minutes"
+                                    "Most time spent in \(topZone.name), \(String(format: "%.1f", Double(topZone.minutes) / 60.0)) hours"
                                 )
                                 .transition(.scale.combined(with: .opacity))
                                 .animation(.easeOut, value: topZone.minutes)
@@ -831,6 +897,68 @@ struct ReportView: View {
                                                 Color.blue.opacity(0.08),
                                                 Color.cyan.opacity(0.05),
                                             ], startPoint: .topLeading, endPoint: .bottomTrailing))
+                            )
+                            .padding(.horizontal)
+                        }
+                    }
+
+                    // MARK: - Zone Distribution Pie Chart
+                    if !logs.isEmpty {
+                        VStack(alignment: .leading, spacing: 12) {
+                            Text("Zone Distribution")
+                                .font(.title3)
+                                .bold()
+                                .padding(.horizontal)
+
+                            HStack {
+                                Chart(zoneDistributionData) { item in
+                                    SectorMark(
+                                        angle: .value("Hours", item.hours),
+                                        innerRadius: .ratio(0.5),
+                                        angularInset: 1.0
+                                    )
+                                    .foregroundStyle(item.color)
+                                    .cornerRadius(3)
+                                }
+                                .frame(height: 200)
+
+                                // Legend
+                                VStack(alignment: .leading, spacing: 8) {
+                                    ForEach(zoneDistributionData.prefix(5)) { item in
+                                        HStack {
+                                            Circle()
+                                                .fill(item.color)
+                                                .frame(width: 8, height: 8)
+                                            Text(item.name)
+                                                .font(.caption)
+                                                .foregroundColor(.secondary)
+                                                .lineLimit(1)
+                                            Spacer()
+                                            Text(
+                                                String(
+                                                    format: "%.0f%%",
+                                                    (item.hours
+                                                        / zoneDistributionData.reduce(0) {
+                                                            $0 + $1.hours
+                                                        }) * 100)
+                                            )
+                                            .font(.caption)
+                                            .bold()
+                                            .foregroundColor(.secondary)
+                                        }
+                                    }
+                                    if zoneDistributionData.count > 5 {
+                                        Text("+ \(zoneDistributionData.count - 5) more")
+                                            .font(.caption2)
+                                            .foregroundColor(.secondary)
+                                    }
+                                }
+                                .frame(width: 120)
+                            }
+                            .padding()
+                            .background(
+                                RoundedRectangle(cornerRadius: 20)
+                                    .fill(Color(UIColor.secondarySystemGroupedBackground))
                             )
                             .padding(.horizontal)
                         }

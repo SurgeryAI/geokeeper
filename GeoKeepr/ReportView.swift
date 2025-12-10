@@ -459,13 +459,20 @@ struct ReportView: View {
 
     var categoryDistributionData: [CategoryDistributionItem] {
         let totalHours: Double
+        let calendar = Calendar.current
+        let now = Date()
+        var cutoff: Date?
+
         switch timeRange {
         case .week:
             totalHours = 7 * 24
+            cutoff = calendar.date(byAdding: .day, value: -7, to: now)
         case .month:
             totalHours = 30 * 24
+            cutoff = calendar.date(byAdding: .day, value: -30, to: now)
         case .year:
             totalHours = 365 * 24
+            cutoff = calendar.date(byAdding: .year, value: -1, to: now)
         case .all:
             // For "All Time", we need to calculate the duration from the first log
             if let first = firstVisitDate {
@@ -475,10 +482,16 @@ struct ReportView: View {
             } else {
                 totalHours = 24  // Fallback
             }
+            cutoff = nil
         }
 
-        var items: [CategoryDistributionItem] = []
-        var trackedHours: Double = 0
+        // 1. Calculate True Tracked Time (handling overlaps)
+        let trueTrackedHours = calculateTimeCoverage(cutoff: cutoff)
+
+        // 2. Calculate Unaccounted Time
+        let unaccounted = max(0, totalHours - trueTrackedHours)
+
+        // 3. Aggregate Raw Category Minutes (with overlaps)
         var categoryMinutes: [LocationCategory: Double] = [:]
 
         // Aggregate logs by category
@@ -492,41 +505,37 @@ struct ReportView: View {
         // Aggregate active sessions by category
         for zone in activeZones {
             if let entryTime = zone.entryTime {
-                // Apply time range filter logic similar to aggregatedData
-                let calendar = Calendar.current
-                let now = Date()
-                var cutoff: Date?
-
-                switch timeRange {
-                case .week: cutoff = calendar.date(byAdding: .day, value: -7, to: now)
-                case .month: cutoff = calendar.date(byAdding: .day, value: -30, to: now)
-                case .year: cutoff = calendar.date(byAdding: .year, value: -1, to: now)
-                case .all: cutoff = nil
-                }
-
                 if let cutoff = cutoff, entryTime < cutoff { continue }
-
                 let duration = Date().timeIntervalSince(entryTime) / 60.0
                 categoryMinutes[zone.fallbackCategory, default: 0] += duration
             }
         }
 
-        // Create items
+        // 4. Normalize Category Hours to fit into True Tracked Time
+        let rawTotalMinutes = categoryMinutes.values.reduce(0, +)
+        let rawTotalHours = rawTotalMinutes / 60.0
+
+        var items: [CategoryDistributionItem] = []
+
+        // Avoid division by zero
+        let normalizationFactor = rawTotalHours > 0 ? (trueTrackedHours / rawTotalHours) : 0
+
         for (category, minutes) in categoryMinutes {
-            let hours = minutes / 60.0
-            trackedHours += hours
+            let rawHours = minutes / 60.0
+            // Scale down the hours so they sum up to trueTrackedHours
+            let displayHours = rawHours * normalizationFactor
+
             items.append(
                 CategoryDistributionItem(
                     name: category.rawValue,
-                    hours: hours,
+                    hours: displayHours,
                     color: colorForCategory(category),
                     isUnaccounted: false
                 ))
         }
 
         // Add unaccounted time
-        let unaccounted = max(0, totalHours - trackedHours)
-        if unaccounted > 0 {
+        if unaccounted > 0.1 {  // Threshold to avoid tiny slivers
             items.append(
                 CategoryDistributionItem(
                     name: "Unaccounted",
@@ -541,6 +550,51 @@ struct ReportView: View {
             if $1.isUnaccounted { return true }
             return $0.hours > $1.hours
         }
+    }
+
+    // Helper to calculate the union of all tracked intervals
+    private func calculateTimeCoverage(cutoff: Date?) -> Double {
+        var intervals: [(start: Date, end: Date)] = []
+
+        // Add completed logs
+        for log in filteredLogs {
+            intervals.append((start: log.entry, end: log.exit))
+        }
+
+        // Add active sessions
+        for zone in activeZones {
+            if let entryTime = zone.entryTime {
+                // If there's a cutoff, ensure we don't include time before it
+                // Logic in filteredLogs already handles this for logs, but let's be safe
+                let start = cutoff != nil ? max(entryTime, cutoff!) : entryTime
+                intervals.append((start: start, end: Date()))
+            }
+        }
+
+        guard !intervals.isEmpty else { return 0 }
+
+        // Sort by start time
+        intervals.sort { $0.start < $1.start }
+
+        var mergedIntervals: [(start: Date, end: Date)] = []
+
+        for interval in intervals {
+            if let last = mergedIntervals.last {
+                if interval.start < last.end {
+                    // Overlap: Extend the last interval if needed
+                    mergedIntervals[mergedIntervals.count - 1].end = max(last.end, interval.end)
+                } else {
+                    // No overlap: Add new interval
+                    mergedIntervals.append(interval)
+                }
+            } else {
+                mergedIntervals.append(interval)
+            }
+        }
+
+        // Sum durations
+        let totalSeconds = mergedIntervals.reduce(0.0) { $0 + $1.end.timeIntervalSince($1.start) }
+        return totalSeconds / 3600.0  // Convert to hours
     }
 
     // MARK: - Daily Breakdown Data

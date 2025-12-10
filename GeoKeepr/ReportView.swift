@@ -447,9 +447,9 @@ struct ReportView: View {
         }
     }
 
-    // MARK: - Zone Distribution Data
+    // MARK: - Category Distribution Data
 
-    struct ZoneDistributionItem: Identifiable {
+    struct CategoryDistributionItem: Identifiable {
         let id = UUID()
         let name: String
         let hours: Double
@@ -457,7 +457,7 @@ struct ReportView: View {
         let isUnaccounted: Bool
     }
 
-    var zoneDistributionData: [ZoneDistributionItem] {
+    var categoryDistributionData: [CategoryDistributionItem] {
         let totalHours: Double
         switch timeRange {
         case .week:
@@ -477,18 +477,49 @@ struct ReportView: View {
             }
         }
 
-        var items: [ZoneDistributionItem] = []
+        var items: [CategoryDistributionItem] = []
         var trackedHours: Double = 0
+        var categoryMinutes: [LocationCategory: Double] = [:]
 
-        // Add tracked zones
-        for (name, minutes) in aggregatedData {
-            let hours = Double(minutes) / 60.0
+        // Aggregate logs by category
+        for log in filteredLogs {
+            if let location = trackedLocations.first(where: { $0.name == log.locationName }) {
+                categoryMinutes[location.fallbackCategory, default: 0] += Double(
+                    log.durationInMinutes)
+            }
+        }
+
+        // Aggregate active sessions by category
+        for zone in activeZones {
+            if let entryTime = zone.entryTime {
+                // Apply time range filter logic similar to aggregatedData
+                let calendar = Calendar.current
+                let now = Date()
+                var cutoff: Date?
+
+                switch timeRange {
+                case .week: cutoff = calendar.date(byAdding: .day, value: -7, to: now)
+                case .month: cutoff = calendar.date(byAdding: .day, value: -30, to: now)
+                case .year: cutoff = calendar.date(byAdding: .year, value: -1, to: now)
+                case .all: cutoff = nil
+                }
+
+                if let cutoff = cutoff, entryTime < cutoff { continue }
+
+                let duration = Date().timeIntervalSince(entryTime) / 60.0
+                categoryMinutes[zone.fallbackCategory, default: 0] += duration
+            }
+        }
+
+        // Create items
+        for (category, minutes) in categoryMinutes {
+            let hours = minutes / 60.0
             trackedHours += hours
             items.append(
-                ZoneDistributionItem(
-                    name: name,
+                CategoryDistributionItem(
+                    name: category.rawValue,
                     hours: hours,
-                    color: colorForZone(name),
+                    color: colorForCategory(category),
                     isUnaccounted: false
                 ))
         }
@@ -497,7 +528,7 @@ struct ReportView: View {
         let unaccounted = max(0, totalHours - trackedHours)
         if unaccounted > 0 {
             items.append(
-                ZoneDistributionItem(
+                CategoryDistributionItem(
                     name: "Unaccounted",
                     hours: unaccounted,
                     color: Color.gray.opacity(0.3),
@@ -902,16 +933,16 @@ struct ReportView: View {
                         }
                     }
 
-                    // MARK: - Zone Distribution Pie Chart
+                    // MARK: - Category Distribution Pie Chart
                     if !logs.isEmpty {
                         VStack(alignment: .leading, spacing: 12) {
-                            Text("Zone Distribution")
+                            Text("Category Distribution")
                                 .font(.title3)
                                 .bold()
                                 .padding(.horizontal)
 
                             HStack {
-                                Chart(zoneDistributionData) { item in
+                                Chart(categoryDistributionData) { item in
                                     SectorMark(
                                         angle: .value("Hours", item.hours),
                                         innerRadius: .ratio(0.5),
@@ -924,7 +955,7 @@ struct ReportView: View {
 
                                 // Legend
                                 VStack(alignment: .leading, spacing: 8) {
-                                    ForEach(zoneDistributionData.prefix(5)) { item in
+                                    ForEach(categoryDistributionData.prefix(5)) { item in
                                         HStack {
                                             Circle()
                                                 .fill(item.color)
@@ -938,7 +969,7 @@ struct ReportView: View {
                                                 String(
                                                     format: "%.0f%%",
                                                     (item.hours
-                                                        / zoneDistributionData.reduce(0) {
+                                                        / categoryDistributionData.reduce(0) {
                                                             $0 + $1.hours
                                                         }) * 100)
                                             )
@@ -947,8 +978,8 @@ struct ReportView: View {
                                             .foregroundColor(.secondary)
                                         }
                                     }
-                                    if zoneDistributionData.count > 5 {
-                                        Text("+ \(zoneDistributionData.count - 5) more")
+                                    if categoryDistributionData.count > 5 {
+                                        Text("+ \(categoryDistributionData.count - 5) more")
                                             .font(.caption2)
                                             .foregroundColor(.secondary)
                                     }

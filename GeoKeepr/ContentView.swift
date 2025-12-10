@@ -7,25 +7,34 @@ struct ContentView: View {
     @EnvironmentObject var locationManager: LocationManager
     @Environment(\.modelContext) var modelContext
 
+    @State private var selectedTab: Tab = .reports
+
+    enum Tab {
+        case map, zones, reports, debug
+    }
+
     var body: some View {
-        TabView {
+        TabView(selection: $selectedTab) {
             // Setup Tab
             MapSetupView()
                 .tabItem {
                     Label("Map", systemImage: "map.fill")
                 }
+                .tag(Tab.map)
 
             // Zones List Tab
             ZoneListView()
                 .tabItem {
                     Label("Zones", systemImage: "list.bullet.circle.fill")
                 }
+                .tag(Tab.zones)
 
             // Reports Tab
             ReportView()
                 .tabItem {
                     Label("Insights", systemImage: "chart.pie.fill")
                 }
+                .tag(Tab.reports)
 
             #if DEBUG
                 // Debug Tab (only in DEBUG builds)
@@ -33,6 +42,7 @@ struct ContentView: View {
                     .tabItem {
                         Label("Debug", systemImage: "hammer.fill")
                     }
+                    .tag(Tab.debug)
             #endif
         }
         .tint(.indigo)  // Professional Brand Color

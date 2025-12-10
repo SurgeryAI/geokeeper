@@ -600,38 +600,17 @@ struct ReportView: View {
     // MARK: - Daily Breakdown Data
 
     // Aggregates total time per category for each day of the week (1=Sunday, ..., 7=Saturday)
-    // Aggregates total time per category for each day of the week (1=Sunday, ..., 7=Saturday)
     var aggregatedDailyBreakdown: [Int: [LocationCategory: Double]] {
         var breakdown: [Int: [LocationCategory: Double]] = [:]
         let calendar = Calendar.current
         let now = Date()
 
-        // Initialize empty dicts for all days to ensure we have entries
+        // Initialize empty dicts for all days
         for i in 1...7 {
             breakdown[i] = [:]
         }
 
-        // Process logs
-        for log in filteredLogs {
-            let weekday = calendar.component(.weekday, from: log.entry)
-            // Find category
-            if let location = trackedLocations.first(where: { $0.name == log.locationName }) {
-                let category = location.fallbackCategory
-                breakdown[weekday, default: [:]][category, default: 0] +=
-                    Double(log.durationInMinutes) / 60.0
-            }
-        }
-
-        // Process active zones
-        let currentWeekday = calendar.component(.weekday, from: now)
-        for zone in activeZones {
-            guard let entryTime = zone.entryTime else { continue }
-            let durationMinutes = now.timeIntervalSince(entryTime) / 60.0
-            let category = zone.fallbackCategory
-            breakdown[currentWeekday, default: [:]][category, default: 0] += durationMinutes / 60.0
-        }
-
-        // Normalize by number of days in range
+        // Determine the date range to iterate over
         let rangeStartDate: Date
         switch timeRange {
         case .week:
@@ -644,10 +623,9 @@ struct ReportView: View {
             rangeStartDate = logs.last?.entry ?? now
         }
 
-        // Determine the actual start of data collection to avoid penalizing for time before the app was used
+        // Determine the actual start of data collection
         let earliestLogDate = logs.last?.entry
         let earliestActiveDate = activeZones.compactMap { $0.entryTime }.min()
-
         let dataStartDate: Date
         if let logDate = earliestLogDate, let activeDate = earliestActiveDate {
             dataStartDate = min(logDate, activeDate)
@@ -655,12 +633,78 @@ struct ReportView: View {
             dataStartDate = earliestLogDate ?? earliestActiveDate ?? now
         }
 
-        // Use the LATER of the two dates (range start or data start)
-        // But ensure we don't go into the future (though dataStartDate shouldn't be in future)
+        // Use the LATER of the two dates
         let effectiveStartDate = max(rangeStartDate, dataStartDate)
 
-        let weekdayCounts = countWeekdays(from: effectiveStartDate, to: now)
+        // Iterate day by day from effectiveStartDate to now
+        var currentDate = calendar.startOfDay(for: effectiveStartDate)
+        let endOfToday = calendar.startOfDay(for: calendar.date(byAdding: .day, value: 1, to: now)!)
 
+        var weekdayCounts: [Int: Int] = [:]
+
+        while currentDate < endOfToday {
+            let nextDate = calendar.date(byAdding: .day, value: 1, to: currentDate)!
+            let weekday = calendar.component(.weekday, from: currentDate)
+            weekdayCounts[weekday, default: 0] += 1
+
+            // 1. Calculate True Tracked Time for this day (handling overlaps)
+            let trueTrackedHours = calculateCoverageForDay(start: currentDate, end: nextDate)
+
+            // 2. Calculate Raw Category Minutes for this day
+            var dailyCategoryMinutes: [LocationCategory: Double] = [:]
+
+            // Logs
+            for log in filteredLogs {
+                // Check overlap with day
+                let logStart = log.entry
+                let logEnd = log.exit
+
+                if logEnd > currentDate && logStart < nextDate {
+                    let overlapStart = max(logStart, currentDate)
+                    let overlapEnd = min(logEnd, nextDate)
+                    let duration = overlapEnd.timeIntervalSince(overlapStart) / 60.0
+
+                    if let location = trackedLocations.first(where: { $0.name == log.locationName })
+                    {
+                        dailyCategoryMinutes[location.fallbackCategory, default: 0] += duration
+                    }
+                }
+            }
+
+            // Active Zones
+            for zone in activeZones {
+                if let entryTime = zone.entryTime {
+                    let zoneStart = entryTime
+                    let zoneEnd = now  // Active zones end "now"
+
+                    if zoneEnd > currentDate && zoneStart < nextDate {
+                        let overlapStart = max(zoneStart, currentDate)
+                        let overlapEnd = min(zoneEnd, nextDate)
+
+                        if overlapEnd > overlapStart {
+                            let duration = overlapEnd.timeIntervalSince(overlapStart) / 60.0
+                            dailyCategoryMinutes[zone.fallbackCategory, default: 0] += duration
+                        }
+                    }
+                }
+            }
+
+            // 3. Normalize and Accumulate
+            let rawTotalMinutes = dailyCategoryMinutes.values.reduce(0, +)
+            let rawTotalHours = rawTotalMinutes / 60.0
+
+            let normalizationFactor = rawTotalHours > 0 ? (trueTrackedHours / rawTotalHours) : 0
+
+            for (category, minutes) in dailyCategoryMinutes {
+                let rawHours = minutes / 60.0
+                let displayHours = rawHours * normalizationFactor
+                breakdown[weekday]?[category, default: 0] += displayHours
+            }
+
+            currentDate = nextDate
+        }
+
+        // Average by number of times each weekday occurred
         for (day, categories) in breakdown {
             let count = max(1, weekdayCounts[day] ?? 1)
             for (cat, hours) in categories {
@@ -671,21 +715,52 @@ struct ReportView: View {
         return breakdown
     }
 
-    private func countWeekdays(from start: Date, to end: Date) -> [Int: Int] {
-        var counts: [Int: Int] = [:]
-        let calendar = Calendar.current
-        // Normalize to start of day to avoid partial day issues
-        let startDay = calendar.startOfDay(for: start)
-        let endDay = calendar.startOfDay(for: end)
+    // Helper to calculate union duration for a specific day
+    private func calculateCoverageForDay(start: Date, end: Date) -> Double {
+        var intervals: [(start: Date, end: Date)] = []
 
-        var current = startDay
-        while current <= endDay {
-            let weekday = calendar.component(.weekday, from: current)
-            counts[weekday, default: 0] += 1
-            guard let next = calendar.date(byAdding: .day, value: 1, to: current) else { break }
-            current = next
+        // Logs
+        for log in filteredLogs {
+            if log.exit > start && log.entry < end {
+                let overlapStart = max(log.entry, start)
+                let overlapEnd = min(log.exit, end)
+                intervals.append((start: overlapStart, end: overlapEnd))
+            }
         }
-        return counts
+
+        // Active Zones
+        for zone in activeZones {
+            if let entryTime = zone.entryTime {
+                let zoneEnd = Date()
+                if zoneEnd > start && entryTime < end {
+                    let overlapStart = max(entryTime, start)
+                    let overlapEnd = min(zoneEnd, end)
+                    if overlapEnd > overlapStart {
+                        intervals.append((start: overlapStart, end: overlapEnd))
+                    }
+                }
+            }
+        }
+
+        guard !intervals.isEmpty else { return 0 }
+
+        intervals.sort { $0.start < $1.start }
+
+        var mergedIntervals: [(start: Date, end: Date)] = []
+        for interval in intervals {
+            if let last = mergedIntervals.last {
+                if interval.start < last.end {
+                    mergedIntervals[mergedIntervals.count - 1].end = max(last.end, interval.end)
+                } else {
+                    mergedIntervals.append(interval)
+                }
+            } else {
+                mergedIntervals.append(interval)
+            }
+        }
+
+        let totalSeconds = mergedIntervals.reduce(0.0) { $0 + $1.end.timeIntervalSince($1.start) }
+        return totalSeconds / 3600.0
     }
 
     // Helper to get day name from weekday number (1=Sun)

@@ -7,7 +7,7 @@ GeoKeepr: Time & Zone Tracker
 Track time spent at places
 
 ## Promotional Text (170 characters max)
-Effortlessly track time spent at work, home, and your favorite spots. Automatic, private, and battery-efficient location journaling with beautiful insights.
+Master your time with GeoKeepr. Automatically track visits to work, home & gym. Now with Weekly Life-Logs & Category Insights. Private, battery-efficient & beautiful.
 
 ## Description
 
@@ -22,8 +22,9 @@ Simply drop a pin, set a radius, and let GeoKeepr do the rest. The app automatic
 
 📊 **Powerful Insights & Charts**
 Visualize your life with stunning, interactive charts.
+- **Weekly Life-Log**: Get a generated story of your week, highlighting your top activities and trends.
+- **Category Distribution**: Understand your life balance with a breakdown of time spent in categories like "Work," "Home," and "Fitness," including unaccounted time.
 - **Daily Breakdowns**: See exactly how many hours you spent in each zone over the last 30 days.
-- **Category Trends**: Group zones into categories like "Work," "Fitness," or "Social" to see the bigger picture.
 - **Smart Stats**: Instantly view your average visit duration, busiest days of the week, and longest sessions.
 
 🏷️ **Customizable Categories**

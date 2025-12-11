@@ -15,6 +15,13 @@ struct ContentView: View {
 
     var body: some View {
         TabView(selection: $selectedTab) {
+            // Reports Tab
+            ReportView()
+                .tabItem {
+                    Label("Life", systemImage: "chart.pie.fill")
+                }
+                .tag(Tab.reports)
+
             // Setup Tab
             MapSetupView()
                 .tabItem {
@@ -28,13 +35,6 @@ struct ContentView: View {
                     Label("Zones", systemImage: "list.bullet.circle.fill")
                 }
                 .tag(Tab.zones)
-
-            // Reports Tab
-            ReportView()
-                .tabItem {
-                    Label("Insights", systemImage: "chart.pie.fill")
-                }
-                .tag(Tab.reports)
 
             #if DEBUG
                 // Debug Tab (only in DEBUG builds)

@@ -227,11 +227,18 @@ class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
                 // If we think we are outside (entryTime == nil) but we are physically inside
                 else {
                     let region = location.region
+                    // Stricter check: Only manually enter if inside AND accuracy is high (<= 100m)
                     if region.contains(currentLocation.coordinate) {
-                        print(
-                            "[GeoKeeper] ⚠️ Detected missed entry for \(location.name). Correcting..."
-                        )
-                        handleRegionEntry(region: region)
+                        if currentLocation.horizontalAccuracy <= 100 {
+                            print(
+                                "[GeoKeeper] ⚠️ Detected missed entry for \(location.name). Correcting..."
+                            )
+                            handleRegionEntry(region: region)
+                        } else {
+                            print(
+                                "[GeoKeeper] ⏳ Potential entry for \(location.name) ignored due to accuracy (\(currentLocation.horizontalAccuracy)m)"
+                            )
+                        }
                     }
                 }
             }

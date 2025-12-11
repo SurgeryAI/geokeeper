@@ -194,6 +194,16 @@ class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
 
     /// Checks all tracked zones against the current location to catch missed entry/exit events.
     private func checkZones(for currentLocation: CLLocation) {
+        // Accuracy Check: Ignore updates with poor accuracy (> 200m)
+        // This prevents false exits when the app launches with a coarse location
+        guard currentLocation.horizontalAccuracy >= 0 && currentLocation.horizontalAccuracy <= 200
+        else {
+            print(
+                "[GeoKeeper] ⚠️ Skipping zone check due to poor accuracy: \(currentLocation.horizontalAccuracy)m"
+            )
+            return
+        }
+
         guard let context = modelContext else { return }
 
         do {

@@ -10,6 +10,8 @@ struct ReportView: View {
     // Query for all tracked locations (to check for active zones)
     @Query var trackedLocations: [TrackedLocation]
 
+    @Environment(\.modelContext) var modelContext
+
     @State private var timeRange: TimeRange = .week
     // Timer to update the "Currently Active" time every second (for display only)
     @State private var activeZoneTimer = Timer.publish(every: 1, on: .main, in: .common)
@@ -22,6 +24,10 @@ struct ReportView: View {
     // State for Weekly Story
     @State private var showingStory = false
     @State private var weeklyRecap: WeeklyRecap?
+
+    // State for Log Deletion
+    @State private var logToDelete: LocationLog?
+    @State private var showDeleteConfirmation = false
 
     enum TimeRange: String, CaseIterable {
         case week = "Last 7 Days"
@@ -788,6 +794,13 @@ struct ReportView: View {
         return formatter.string(from: date)
     }
 
+    private func deleteLog() {
+        if let log = logToDelete {
+            modelContext.delete(log)
+            logToDelete = nil
+        }
+    }
+
     var body: some View {
         NavigationStack {
             ScrollView {
@@ -1396,6 +1409,14 @@ struct ReportView: View {
                                     }
                                     .padding()
                                     .background(Color(UIColor.systemBackground))
+                                    .contextMenu {
+                                        Button(role: .destructive) {
+                                            logToDelete = log
+                                            showDeleteConfirmation = true
+                                        } label: {
+                                            Label("Delete Log", systemImage: "trash")
+                                        }
+                                    }
                                     Divider().padding(.leading)
                                 }
                             }
@@ -1418,6 +1439,16 @@ struct ReportView: View {
                     showingStory = false
                 }
             }
+        }
+        .alert("Delete Log Entry?", isPresented: $showDeleteConfirmation) {
+            Button("Delete", role: .destructive) {
+                deleteLog()
+            }
+            Button("Cancel", role: .cancel) {
+                logToDelete = nil
+            }
+        } message: {
+            Text("Are you sure you want to delete this log? This action cannot be undone.")
         }
     }
 }

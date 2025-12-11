@@ -340,8 +340,20 @@ class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
             }
 
             let exitTime = Date()
+            let duration = exitTime.timeIntervalSince(entryTime)
 
-            // 1. Create and insert the LocationLog
+            // 1. Check duration threshold (1 minute)
+            if duration < 60 {
+                print(
+                    "[GeoKeeper] ⏱️ Visit to \(location.name) was too short (< 1 min). Discarding log."
+                )
+                // Still need to clear entryTime to reset state
+                location.entryTime = nil
+                try context.save()
+                return
+            }
+
+            // 2. Create and insert the LocationLog
             let newLog = LocationLog(
                 locationName: location.name, locationId: location.id, entry: entryTime,
                 exit: exitTime)
@@ -350,7 +362,7 @@ class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
                 "[GeoKeeper] ✅ Created LocationLog for \(location.name). Duration: \(newLog.durationString)"
             )
 
-            // 2. Clear the entry time on the TrackedLocation (marking it inactive)
+            // 3. Clear the entry time on the TrackedLocation (marking it inactive)
             location.entryTime = nil
 
             try context.save()

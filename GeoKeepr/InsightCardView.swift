@@ -24,6 +24,7 @@ struct InsightCardView: View {
                 Text(mainText)
                     .font(.subheadline)
                     .bold()
+                    .italic()
                 Text(detailText)
                     .font(.caption2)
                     .foregroundStyle(.secondary)

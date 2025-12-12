@@ -69,8 +69,6 @@ struct ReportView: View {
         // Add active sessions
         for zone in activeZones {
             if let entryTime = zone.entryTime {
-                // Only include if it matches the time range
-                // Only include if it matches the time range
                 let calendar = Calendar.current
                 let now = Date()
                 var cutoff: Date?
@@ -101,9 +99,6 @@ struct ReportView: View {
 
         let activeMinutes = activeZones.reduce(0) { total, zone in
             guard let entryTime = zone.entryTime else { return total }
-
-            // Only include if it matches the time range
-            // Only include if it matches the time range
             let calendar = Calendar.current
             let now = Date()
             var cutoff: Date?
@@ -136,9 +131,6 @@ struct ReportView: View {
             return "\(minutes)m"
         }
     }
-
-    // MARK: - New Insights
-
     // Most time spent (top zone)
     var topZone: (name: String, minutes: Int)? {
         guard !aggregatedData.isEmpty else { return nil }
@@ -181,9 +173,6 @@ struct ReportView: View {
         logs.max(by: { $0.entry < $1.entry })?.entry
     }
     // Add these computed properties to your ReportView struct:
-
-    // Add these computed properties to your ReportView struct:
-
     // 1. Hours spent at work in the last full work week (Monday through Sunday)
     var workHoursLastWeek: (hours: Double, isComplete: Bool)? {
         let calendar = Calendar.current

@@ -237,8 +237,36 @@ struct ReportView: View {
         }
 
         for (_, weekLogs) in weekGroups {
-            let weekMinutes = weekLogs.reduce(0) { $0 + $1.durationInMinutes }
-            let weekHours = Double(weekMinutes) / 60.0
+            // Extract intervals for this week
+            var intervals: [(start: Date, end: Date)] = weekLogs.map {
+                (start: $0.entry, end: $0.exit)
+            }
+
+            // Sort intervals by start time
+            intervals.sort { $0.start < $1.start }
+
+            // Merge overlapping intervals
+            var mergedIntervals: [(start: Date, end: Date)] = []
+
+            for interval in intervals {
+                if let last = mergedIntervals.last {
+                    if interval.start < last.end {
+                        // Overlap: Extend the last interval if needed
+                        mergedIntervals[mergedIntervals.count - 1].end = max(last.end, interval.end)
+                    } else {
+                        // No overlap: Add new interval
+                        mergedIntervals.append(interval)
+                    }
+                } else {
+                    mergedIntervals.append(interval)
+                }
+            }
+
+            // Calculate total duration from merged intervals
+            let weekSeconds = mergedIntervals.reduce(0.0) {
+                $0 + $1.end.timeIntervalSince($1.start)
+            }
+            let weekHours = weekSeconds / 3600.0
             weeklyHours.append(weekHours)
         }
 

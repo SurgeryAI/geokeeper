@@ -156,6 +156,7 @@ struct ZoneCategoryView: View {
     @State private var reportEndDate = Date()
     @State private var showingMailUnavailableAlert = false
     @State private var hasInitializedReportDates = false
+    @State private var generatedReport: (subject: String, body: String)?
 
     var body: some View {
         ScrollView {
@@ -371,6 +372,18 @@ struct ZoneCategoryView: View {
 
                     Section {
                         Button("Generate Report") {
+                            // Capture values now
+                            let startDate = reportStartDate
+                            let endDate = reportEndDate
+
+                            generatedReport = CategoryReportGenerator.generateEmailReport(
+                                category: category,
+                                logs: categoryLogs,
+                                activeLocations: categoryLocations,
+                                startDate: startDate,
+                                endDate: endDate
+                            )
+
                             showingDateRangePicker = false
                             // Small delay to allow sheet to dismiss before checking mail capability
                             DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
@@ -403,20 +416,14 @@ struct ZoneCategoryView: View {
             .presentationDetents([.medium])
         }
         .sheet(isPresented: $showingMailCompose) {
-            let report = CategoryReportGenerator.generateEmailReport(
-                category: category,
-                logs: categoryLogs,
-                activeLocations: categoryLocations,  // Pass active locations for current session tracking
-                startDate: reportStartDate,
-                endDate: reportEndDate
-            )
-
-            MailComposeView(
-                result: $mailComposeResult,
-                subject: report.subject,
-                messageBody: report.body,
-                isHTML: true
-            )
+            if let report = generatedReport {
+                MailComposeView(
+                    result: $mailComposeResult,
+                    subject: report.subject,
+                    messageBody: report.body,
+                    isHTML: true
+                )
+            }
         }
         .alert("Cannot Send Email", isPresented: $showingMailUnavailableAlert) {
             Button("OK", role: .cancel) {}

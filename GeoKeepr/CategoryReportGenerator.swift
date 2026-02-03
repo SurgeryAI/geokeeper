@@ -138,10 +138,10 @@ struct CategoryReportGenerator {
         let daysWithActivity = dailyReports.filter { $0.totalMinutes > 0 }.count
         let averageDailyHours = daysWithActivity > 0 ? totalHours / Double(daysWithActivity) : 0
 
-        // Session count is still useful from raw logs to know how many "events" occurred,
-        // but for duration we must use the merged view.
-        let sessionCount = filteredLogs.count
-        let averageSessionDuration = sessionCount > 0 ? totalHours / Double(sessionCount) : 0
+        // FIX: Calculate average session duration from merged sessions
+        // Count total merged sessions across all days
+        let mergedSessionCount = dailyReports.reduce(0) { $0 + $1.sessions.count }
+        let averageSessionDuration = mergedSessionCount > 0 ? totalHours / Double(mergedSessionCount) : 0
 
         let summary = ReportSummary(
             categoryName: category.rawValue,
@@ -150,7 +150,7 @@ struct CategoryReportGenerator {
             totalHours: totalHours,
             totalDays: daysWithActivity,
             averageDailyHours: averageDailyHours,
-            sessionCount: sessionCount,
+            sessionCount: mergedSessionCount,
             averageSessionDuration: averageSessionDuration
         )
 

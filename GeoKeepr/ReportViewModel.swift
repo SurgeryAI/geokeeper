@@ -19,7 +19,7 @@ class ReportViewModel: ObservableObject {
             return logs
         case .week:
             let cutoff = Calendar.current.date(byAdding: .day, value: -7, to: Date())!
-            return logs.filter { $0.entry > cutoff }
+            return logs.filter { $0.entry >= cutoff }
         }
     }
 

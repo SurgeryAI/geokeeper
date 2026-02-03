@@ -171,8 +171,8 @@ struct WeeklyRecapGenerator {
 
         // 4. Deep Focus (Longest Session)
         if let longestSession = recentLogs.max(by: { $0.durationInMinutes < $1.durationInMinutes }),
-            longestSession.durationInMinutes > 120
-        {  // Only if > 2 hours
+            longestSession.durationInMinutes >= 120
+        {  // Only if >= 2 hours
             slides.append(
                 .deepFocus(
                     location: longestSession.locationName, duration: longestSession.durationString))

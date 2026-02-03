@@ -113,8 +113,8 @@ final class LocationLog: Identifiable {
 
     /// Duration of stay in minutes.
     var durationInMinutes: Int {
-        let components = Calendar.current.dateComponents([.minute], from: entry, to: exit)
-        return components.minute ?? 0
+        // Calculate total minutes, not just the minute component
+        return Int(exit.timeIntervalSince(entry) / 60.0)
     }
 
     /// Duration of stay as a formatted string.

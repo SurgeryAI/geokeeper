@@ -17,6 +17,11 @@ class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
 
     // MARK: - SwiftData Context
     private var modelContext: ModelContext?
+    
+    // MARK: - Synchronization
+    /// Prevents concurrent entry/exit processing for the same region
+    private var processingRegions: Set<String> = []
+    private let processingQueue = DispatchQueue(label: "com.geokeeper.regionProcessing")
 
     override init() {
         super.init()
@@ -194,9 +199,9 @@ class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
 
     /// Checks all tracked zones against the current location to catch missed entry/exit events.
     private func checkZones(for currentLocation: CLLocation) {
-        // Accuracy Check: Ignore updates with poor accuracy (> 200m)
+        // Accuracy Check: Ignore updates with poor accuracy (> 100m)
         // This prevents false exits when the app launches with a coarse location
-        guard currentLocation.horizontalAccuracy >= 0 && currentLocation.horizontalAccuracy <= 200
+        guard currentLocation.horizontalAccuracy > 0 && currentLocation.horizontalAccuracy <= 100
         else {
             print(
                 "[GeoKeeper] ⚠️ Skipping zone check due to poor accuracy: \(currentLocation.horizontalAccuracy)m"
@@ -285,6 +290,26 @@ class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     /// Handles updating the entry time of a tracked location upon region entry.
     /// - Parameter region: The region that was entered.
     private func handleRegionEntry(region: CLRegion) {
+        // Prevent concurrent processing of the same region
+        var shouldProcess = false
+        processingQueue.sync {
+            if !processingRegions.contains(region.identifier) {
+                processingRegions.insert(region.identifier)
+                shouldProcess = true
+            }
+        }
+        
+        guard shouldProcess else {
+            print("[GeoKeeper] ⏭️ Skipping duplicate entry for region: \(region.identifier)")
+            return
+        }
+        
+        defer {
+            processingQueue.sync {
+                processingRegions.remove(region.identifier)
+            }
+        }
+        
         print("[GeoKeeper] handleRegionEntry called for region: \(region.identifier)")
 
         guard let context = modelContext else {
@@ -326,6 +351,26 @@ class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     /// Handles creation of a LocationLog and clearing the entry time upon region exit.
     /// - Parameter region: The region that was exited.
     private func handleRegionExit(region: CLRegion) {
+        // Prevent concurrent processing of the same region
+        var shouldProcess = false
+        processingQueue.sync {
+            if !processingRegions.contains(region.identifier) {
+                processingRegions.insert(region.identifier)
+                shouldProcess = true
+            }
+        }
+        
+        guard shouldProcess else {
+            print("[GeoKeeper] ⏭️ Skipping duplicate exit for region: \(region.identifier)")
+            return
+        }
+        
+        defer {
+            processingQueue.sync {
+                processingRegions.remove(region.identifier)
+            }
+        }
+        
         print("[GeoKeeper] handleRegionExit called for region: \(region.identifier)")
 
         guard let context = modelContext else {

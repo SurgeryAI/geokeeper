@@ -15,7 +15,13 @@ struct ZoneCategoryView: View {
 
     var categoryLogs: [LocationLog] {
         let locationNames = Set(categoryLocations.map { $0.name })
-        return allLogs.filter { locationNames.contains($0.locationName) }
+        let locationIds = Set(categoryLocations.map { $0.id })
+        return allLogs.filter { log in
+            if let logId = log.locationId {
+                return locationIds.contains(logId)
+            }
+            return locationNames.contains(log.locationName)
+        }
     }
 
     var hasActiveSessions: Bool {
@@ -212,38 +218,36 @@ struct ZoneCategoryView: View {
                 .padding(.horizontal)
 
                 // Email Report Button
-                if !categoryLogs.isEmpty || hasActiveSessions {
-                    VStack(spacing: 12) {
-                        Button(action: {
-                            showingDateRangePicker = true
-                        }) {
-                            HStack {
-                                Image(systemName: "envelope.fill")
-                                    .font(.title3)
-                                Text("Email Time Report")
-                                    .font(.headline)
-                                    .fontWeight(.semibold)
-                            }
-                            .frame(maxWidth: .infinity)
-                            .padding()
-                            .background(
-                                LinearGradient(
-                                    colors: [.indigo, .purple],
-                                    startPoint: .leading,
-                                    endPoint: .trailing
-                                )
-                            )
-                            .foregroundColor(.white)
-                            .cornerRadius(12)
-                            .shadow(radius: 3)
+                VStack(spacing: 12) {
+                    Button(action: {
+                        showingDateRangePicker = true
+                    }) {
+                        HStack {
+                            Image(systemName: "envelope.fill")
+                                .font(.title3)
+                            Text("Email Time Report")
+                                .font(.headline)
+                                .fontWeight(.semibold)
                         }
-
-                        Text("Generate a detailed report.")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
+                        .frame(maxWidth: .infinity)
+                        .padding()
+                        .background(
+                            LinearGradient(
+                                colors: [.indigo, .purple],
+                                startPoint: .leading,
+                                endPoint: .trailing
+                            )
+                        )
+                        .foregroundColor(.white)
+                        .cornerRadius(12)
+                        .shadow(radius: 3)
                     }
-                    .padding(.horizontal)
+
+                    Text("Generate a detailed report.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
                 }
+                .padding(.horizontal)
 
                 // Chart
                 VStack(alignment: .leading, spacing: 12) {

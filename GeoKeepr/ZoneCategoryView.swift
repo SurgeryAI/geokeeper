@@ -451,9 +451,9 @@ struct ZoneCategoryView: View {
         // If data started 1 year ago, default to 30 days ago.
 
         if dataStart > thirtyDaysAgo {
-            reportStartDate = dataStart
+            reportStartDate = calendar.startOfDay(for: dataStart)
         } else {
-            reportStartDate = thirtyDaysAgo
+            reportStartDate = calendar.startOfDay(for: thirtyDaysAgo)
         }
     }
 }

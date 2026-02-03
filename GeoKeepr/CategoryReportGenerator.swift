@@ -74,9 +74,9 @@ struct CategoryReportGenerator {
         // Combine historical and active logs
         let allLogs = logs + activeLogs
 
-        // Filter logs to date range
+        // Filter logs to include any that overlap with the date range [startDate, adjustedEndDate]
         let filteredLogs = allLogs.filter { log in
-            log.entry >= startDate && log.entry <= adjustedEndDate
+            log.exit >= startDate && log.entry <= adjustedEndDate
         }
 
         // Group logs by day
@@ -87,9 +87,10 @@ struct CategoryReportGenerator {
 
         // Create daily reports
         var currentDate = calendar.startOfDay(for: startDate)
-        let endOfPeriod = calendar.startOfDay(for: endDate)
+        // Ensure we cover the full range including the end date
+        let endOfPeriodInclusive = calendar.startOfDay(for: adjustedEndDate)
 
-        while currentDate <= endOfPeriod {
+        while currentDate <= endOfPeriodInclusive {
             let dayStart = currentDate
             guard let dayEnd = calendar.date(byAdding: .day, value: 1, to: dayStart) else { break }
 
@@ -141,7 +142,8 @@ struct CategoryReportGenerator {
         // FIX: Calculate average session duration from merged sessions
         // Count total merged sessions across all days
         let mergedSessionCount = dailyReports.reduce(0) { $0 + $1.sessions.count }
-        let averageSessionDuration = mergedSessionCount > 0 ? totalHours / Double(mergedSessionCount) : 0
+        let averageSessionDuration =
+            mergedSessionCount > 0 ? totalHours / Double(mergedSessionCount) : 0
 
         let summary = ReportSummary(
             categoryName: category.rawValue,
@@ -156,7 +158,7 @@ struct CategoryReportGenerator {
 
         // Generate email
         let subject =
-            "\(category.rawValue) Time Report - \(formatDate(startDate)) to \(formatDate(endDate))"
+            "\(category.rawValue) Time Report - \(formatDate(startDate)) to \(formatDate(adjustedEndDate))"
         let body = generateHTMLBody(summary: summary, dailyReports: dailyReports)
 
         return (subject, body)

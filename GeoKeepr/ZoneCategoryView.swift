@@ -79,6 +79,12 @@ struct ZoneCategoryView: View {
         let hours: Double
     }
 
+    struct EmailReportData: Identifiable {
+        let id = UUID()
+        let subject: String
+        let body: String
+    }
+
     var dailyHoursData: [DailyHours] {
         let calendar = Calendar.current
         let now = Date()
@@ -149,14 +155,13 @@ struct ZoneCategoryView: View {
 
     // MARK: - Email Report State
 
-    @State private var showingMailCompose = false
+    @State private var emailReportData: EmailReportData?
     @State private var showingDateRangePicker = false
     @State private var mailComposeResult: Result<MFMailComposeResult, Error>?
     @State private var reportStartDate: Date = Date()  // Initialize with dummy, update in onAppear
     @State private var reportEndDate = Date()
     @State private var showingMailUnavailableAlert = false
     @State private var hasInitializedReportDates = false
-    @State private var generatedReport: (subject: String, body: String)?
 
     var body: some View {
         ScrollView {
@@ -376,7 +381,8 @@ struct ZoneCategoryView: View {
                             let startDate = reportStartDate
                             let endDate = reportEndDate
 
-                            generatedReport = CategoryReportGenerator.generateEmailReport(
+                            // Generate the report data immediately
+                            let report = CategoryReportGenerator.generateEmailReport(
                                 category: category,
                                 logs: categoryLogs,
                                 activeLocations: categoryLocations,
@@ -385,10 +391,13 @@ struct ZoneCategoryView: View {
                             )
 
                             showingDateRangePicker = false
+
                             // Small delay to allow sheet to dismiss before checking mail capability
                             DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                                 if MailComposeView.canSendMail() {
-                                    showingMailCompose = true
+                                    // Setting this state triggers the sheet presentation with data guaranteed
+                                    emailReportData = EmailReportData(
+                                        subject: report.subject, body: report.body)
                                 } else {
                                     showingMailUnavailableAlert = true
                                 }
@@ -415,15 +424,13 @@ struct ZoneCategoryView: View {
             }
             .presentationDetents([.medium])
         }
-        .sheet(isPresented: $showingMailCompose) {
-            if let report = generatedReport {
-                MailComposeView(
-                    result: $mailComposeResult,
-                    subject: report.subject,
-                    messageBody: report.body,
-                    isHTML: true
-                )
-            }
+        .sheet(item: $emailReportData) { reportData in
+            MailComposeView(
+                result: $mailComposeResult,
+                subject: reportData.subject,
+                messageBody: reportData.body,
+                isHTML: true
+            )
         }
         .alert("Cannot Send Email", isPresented: $showingMailUnavailableAlert) {
             Button("OK", role: .cancel) {}

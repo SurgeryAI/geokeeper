@@ -18,6 +18,10 @@ struct ZoneCategoryView: View {
         return allLogs.filter { locationNames.contains($0.locationName) }
     }
 
+    var hasActiveSessions: Bool {
+        categoryLocations.contains { $0.entryTime != nil }
+    }
+
     // MARK: - Insights
 
     var totalTimeMinutes: Int {
@@ -208,7 +212,7 @@ struct ZoneCategoryView: View {
                 .padding(.horizontal)
 
                 // Email Report Button
-                if !categoryLogs.isEmpty {
+                if !categoryLogs.isEmpty || hasActiveSessions {
                     VStack(spacing: 12) {
                         Button(action: {
                             showingDateRangePicker = true

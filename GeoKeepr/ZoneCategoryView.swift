@@ -384,6 +384,9 @@ struct ZoneCategoryView: View {
                         }
                     }
                 }
+                .onAppear {
+                    updateReportStartDate()
+                }
             }
             .presentationDetents([.medium])
         }

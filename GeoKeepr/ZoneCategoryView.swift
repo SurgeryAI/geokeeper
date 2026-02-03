@@ -145,6 +145,7 @@ struct ZoneCategoryView: View {
     @State private var reportStartDate: Date = Date()  // Initialize with dummy, update in onAppear
     @State private var reportEndDate = Date()
     @State private var showingMailUnavailableAlert = false
+    @State private var hasInitializedReportDates = false
 
     var body: some View {
         ScrollView {
@@ -382,6 +383,12 @@ struct ZoneCategoryView: View {
                         Button("Cancel") {
                             showingDateRangePicker = false
                         }
+                    }
+                }
+                .onAppear {
+                    if !hasInitializedReportDates {
+                        updateReportStartDate()
+                        hasInitializedReportDates = true
                     }
                 }
             }

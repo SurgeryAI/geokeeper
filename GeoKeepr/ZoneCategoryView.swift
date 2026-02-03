@@ -145,6 +145,7 @@ struct ZoneCategoryView: View {
     @State private var reportStartDate: Date = Date()  // Initialize with dummy, update in onAppear
     @State private var reportEndDate = Date()
     @State private var showingMailUnavailableAlert = false
+    @State private var hasInitializedReportDates = false
 
     var body: some View {
         ScrollView {
@@ -385,7 +386,10 @@ struct ZoneCategoryView: View {
                     }
                 }
                 .onAppear {
-                    updateReportStartDate()
+                    if !hasInitializedReportDates {
+                        updateReportStartDate()
+                        hasInitializedReportDates = true
+                    }
                 }
             }
             .presentationDetents([.medium])
